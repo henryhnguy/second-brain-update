@@ -450,8 +450,8 @@ export const ROUTES: Route[] = [
     handler: async (context) => {
       const form = await context.form();
       const files = await readFiles(form);
-      if (files.length === 0) throw badRequest("Không có tệp nào trong form (field `file`).");
-      if (files.length > 50) throw badRequest("Tối đa 50 tệp mỗi lần.");
+      if (files.length === 0) throw badRequest("No file in the form (field `file`).");
+      if (files.length > 50) throw badRequest("At most 50 files per request.");
       const sourceId = String(form.get("sourceId") ?? "upload");
       const results = [];
       for (const file of files) {
@@ -467,14 +467,14 @@ export const ROUTES: Route[] = [
     handler: async (context) => {
       const form = await context.form();
       const files = await readFiles(form);
-      if (files.length === 0) throw badRequest("Không có tệp nào trong form (field `file`).");
+      if (files.length === 0) throw badRequest("No file in the form (field `file`).");
       const limit = numberParam(String(form.get("limit") ?? ""), 5_000, 1, 50_000);
       const summaries = [];
       for (const file of files) {
         const importer = getImporterFor(file.filename);
         if (!importer) {
           throw badRequest(
-            `Không hỗ trợ định dạng của ${file.filename}. Hiện có: ${listImporters()
+            `Unsupported format for ${file.filename}. Available: ${listImporters()
               .map((item) => item.extensions.join("/"))
               .join(", ")}`,
           );
@@ -651,7 +651,7 @@ export const ROUTES: Route[] = [
       const provider = getProvider(params.provider as string);
       if (!provider) throw notFound(`Provider ${params.provider}`);
       if (provider.auth.kind !== "oauth2") {
-        throw badRequest(`${provider.label} dùng token dán tay — hãy gọi POST /api/v1/connectors/${provider.id}/token.`);
+        throw badRequest(`${provider.label} uses a pasted token — call POST /api/v1/connectors/${provider.id}/token instead.`);
       }
       const body = z
         .object({ clientId: z.string().optional(), credential: z.string().optional(), redirectUri: z.string().optional() })
@@ -695,7 +695,7 @@ export const ROUTES: Route[] = [
         return { kind: "redirect", status: 302, location: `/connectors?error=${encodeURIComponent(errorParam)}` };
       }
       const parsed = consumeOAuthState(state);
-      if (!parsed) throw badRequest("OAuth state không hợp lệ hoặc đã hết hạn. Hãy bắt đầu lại.");
+      if (!parsed) throw badRequest("The OAuth state is invalid or has expired. Start again.");
       const connectorId = parsed.connectorId ?? upsertConnector({ provider: provider.id, name: provider.label, authKind: "oauth2" }).id;
       try {
         const granted = await completeOAuth({ provider, code, redirectUri: parsed.redirectUri, verifier: parsed.verifier });
@@ -733,7 +733,7 @@ export const ROUTES: Route[] = [
       ensureProvidersRegistered();
       const provider = getProvider(params.provider as string);
       if (!provider) throw notFound(`Provider ${params.provider}`);
-      if (provider.auth.kind !== "token") throw badRequest(`${provider.label} dùng OAuth — hãy gọi /connect.`);
+      if (provider.auth.kind !== "token") throw badRequest(`${provider.label} uses OAuth — call /connect instead.`);
       const body = z.object({ token: z.string().min(4), label: z.string().optional(), config: z.record(z.unknown()).optional() }).parse(await context.json());
       const connector = upsertConnector({
         provider: provider.id,

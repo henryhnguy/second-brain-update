@@ -115,7 +115,7 @@ describe("api router", () => {
     expect(chat.status).toBe(200);
     const payload = chat.body as { usedLlm: boolean; content: string; citations: { title: string }[]; conversationId: string };
     expect(payload.usedLlm).toBe(false);
-    expect(payload.content).toContain("chế độ chưa cấu hình model");
+    expect(payload.content).toContain("no model configured");
     expect(payload.citations.length).toBeGreaterThan(0);
     expect(payload.citations[0]?.title).toBe("Ngân sách Alpha");
 
@@ -147,7 +147,7 @@ describe("api router", () => {
     const run = await call("POST", "plays/play_weekly_digest/run", { body: { params: { days: 7 } } });
     const payload = run.body as { output: string; usedLlm: boolean; run: { status: string } };
     expect(payload.usedLlm).toBe(false);
-    expect(payload.output).toContain("Tổng hợp tuần");
+    expect(payload.output).toContain("Weekly digest");
     expect(payload.run.status).toBe("ok");
 
     const history = await call("GET", "plays/runs", { query: "?limit=5" });

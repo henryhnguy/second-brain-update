@@ -121,7 +121,7 @@ export function setDocumentTags(documentId: string, tags: string[]): void {
 
 export function createNote(input: CreateNoteInput = {}): Note {
   const markdown = input.markdown ?? "";
-  const title = (input.title ?? "").trim() || firstLineTitle(markdown) || "Ghi chú mới";
+  const title = (input.title ?? "").trim() || firstLineTitle(markdown) || "New note";
   const outcome = upsertDocument({
     sourceKind: "note",
     sourceId: NOTE_SOURCE_ID,

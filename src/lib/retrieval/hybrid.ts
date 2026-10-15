@@ -238,7 +238,7 @@ export async function retrievePassages(
     });
     const when = hit.createdAt ? ` (${hit.createdAt.slice(0, 10)})` : "";
     blocks.push(
-      `[${index + 1}] ${hit.title}${when} — nguồn: ${hit.sourceId}${hit.headingPath ? ` › ${hit.headingPath}` : ""}\n${hit.snippet}`,
+      `[${index + 1}] ${hit.title}${when} — source: ${hit.sourceId}${hit.headingPath ? ` › ${hit.headingPath}` : ""}\n${hit.snippet}`,
     );
   });
 

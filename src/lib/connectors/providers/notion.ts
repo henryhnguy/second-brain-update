@@ -65,13 +65,13 @@ type NotionBlock = { type?: string; has_children?: boolean } & Record<string, un
 export const notionProvider: Provider = {
   id: "notion",
   label: "Notion",
-  description: "Đồng bộ trang và cơ sở dữ liệu Notion (chỉ đọc) về bộ nhớ cá nhân.",
+  description: "Syncs Notion pages and databases (read-only) into your personal memory.",
   category: "docs",
   docsUrl: "https://developers.notion.com/reference/post-search",
   auth: {
     kind: "token",
     tokenLabel: "Notion integration token",
-    configFields: [{ key: "workspace", label: "Tên workspace (tuỳ chọn)", required: false, placeholder: "My workspace" }],
+    configFields: [{ key: "workspace", label: "Workspace name (optional)", required: false, placeholder: "My workspace" }],
     helpUrl: "https://www.notion.so/my-integrations",
   },
   defaultConfig: { includeDatabases: true },

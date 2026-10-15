@@ -53,7 +53,7 @@ export default function NoteDetailPage() {
   const save = useCallback(
     async (silent = false) => {
       if (!note) return;
-      if (!silent) setStatus("Đang lưu…");
+      if (!silent) setStatus("Saving…");
       try {
         const tagList = tags
           .split(",")
@@ -65,7 +65,7 @@ export default function NoteDetailPage() {
         });
         setNote(result.note);
         setDirty(false);
-        setStatus("Đã lưu");
+        setStatus("Saved");
         setTimeout(() => setStatus(null), 1500);
       } catch (caught) {
         setStatus(null);
@@ -83,7 +83,7 @@ export default function NoteDetailPage() {
   }, [dirty, save]);
 
   async function remove() {
-    if (!confirm("Xoá ghi chú này khỏi bộ nhớ?")) return;
+    if (!confirm("Delete this note from memory?")) return;
     try {
       await api(`/api/v1/notes/${id}`, { method: "DELETE" });
       router.push("/notes");
@@ -101,25 +101,25 @@ export default function NoteDetailPage() {
   const linksTo = useMemo(() => markdown.match(/\[\[([^\]]+)\]\]/g)?.map((match) => match.slice(2, -2)) ?? [], [markdown]);
 
   if (error && !note) return <Notice tone="warn">{error}</Notice>;
-  if (!note) return <Spinner label="Đang mở ghi chú…" />;
+  if (!note) return <Spinner label="Opening note…" />;
 
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/notes" className="text-xs text-muted hover:text-ink">
-            ← Ghi chú
+            ← Notes
           </Link>
           {status ? <span className="text-xs text-muted">{status}</span> : null}
-          {dirty ? <span className="text-xs text-muted">• chưa lưu</span> : null}
+          {dirty ? <span className="text-xs text-muted">• unsaved</span> : null}
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={() => void togglePin()}>{note.document.pinned ? "Bỏ ghim" : "Ghim"}</Button>
+          <Button onClick={() => void togglePin()}>{note.document.pinned ? "Unpin" : "Pin"}</Button>
           <Button variant="primary" onClick={() => void save()}>
-            Lưu
+            Save
           </Button>
           <Button variant="danger" onClick={() => void remove()}>
-            Xoá
+            Delete
           </Button>
         </div>
       </header>
@@ -134,19 +134,19 @@ export default function NoteDetailPage() {
               setTitle(event.target.value);
               setDirty(true);
             }}
-            placeholder="Tiêu đề ghi chú"
+            placeholder="Note title"
             className="mb-3 w-full border-0 bg-transparent text-lg font-semibold outline-none"
           />
           <div className="mb-3 flex items-center justify-between gap-3">
             <Tabs
               tabs={[
-                { id: "write", label: "Soạn" },
-                { id: "preview", label: "Xem trước" },
+                { id: "write", label: "Write" },
+                { id: "preview", label: "Preview" },
               ]}
               active={tab}
               onChange={setTab}
             />
-            <span className="text-[11px] text-muted">{markdown.length} ký tự · {note.document.chunkCount} đoạn chỉ mục</span>
+            <span className="text-[11px] text-muted">{markdown.length} characters · {note.document.chunkCount} indexed chunks</span>
           </div>
           {tab === "write" ? (
             <Textarea
@@ -157,19 +157,19 @@ export default function NoteDetailPage() {
               }}
               rows={22}
               className="font-mono"
-              placeholder={"# Tiêu đề\n\nNội dung… dùng [[liên kết]] và #thẻ."}
+              placeholder={"# Title\n\nContent… use [[links]] and #tag."}
             />
           ) : (
             <div className="min-h-[24rem] rounded-xl border border-line bg-raised p-4">
-              <Markdown>{markdown || "_(trống)_"}</Markdown>
+              <Markdown>{markdown || "_(empty)_"}</Markdown>
             </div>
           )}
         </Card>
 
         <div className="space-y-4">
           <Card>
-            <CardTitle>Thuộc tính</CardTitle>
-            <label className="text-xs text-muted">Thẻ (phân cách bằng dấu phẩy)</label>
+            <CardTitle>Properties</CardTitle>
+            <label className="text-xs text-muted">Tags (comma separated)</label>
             <div className="mt-1">
               <Input
                 value={tags}
@@ -177,16 +177,16 @@ export default function NoteDetailPage() {
                   setTags(value);
                   setDirty(true);
                 }}
-                placeholder="du-an, y-tuong"
+                placeholder="project, ideas"
               />
             </div>
             <dl className="mt-4 space-y-1 text-xs text-muted">
               <div className="flex justify-between">
-                <dt>Tạo</dt>
+                <dt>Created</dt>
                 <dd>{(note.document.createdAt ?? note.document.ingestedAt).slice(0, 16).replace("T", " ")}</dd>
               </div>
               <div className="flex justify-between">
-                <dt>Cập nhật</dt>
+                <dt>Updated</dt>
                 <dd>{(note.document.updatedAt ?? note.document.ingestedAt).slice(0, 16).replace("T", " ")}</dd>
               </div>
               <div className="flex justify-between">
@@ -197,9 +197,9 @@ export default function NoteDetailPage() {
           </Card>
 
           <Card>
-            <CardTitle hint={`${linksTo.length} liên kết`}>Liên kết trong ghi chú</CardTitle>
+            <CardTitle hint={`${linksTo.length} links`}>Links in note</CardTitle>
             {linksTo.length === 0 ? (
-              <p className="text-xs text-muted">Chưa có liên kết nào. Viết [[Tên ghi chú khác]] để tạo.</p>
+              <p className="text-xs text-muted">No links yet. Type [[Another note title]] to create one.</p>
             ) : (
               <ul className="flex flex-wrap gap-1.5">
                 {linksTo.map((link) => (
@@ -212,9 +212,9 @@ export default function NoteDetailPage() {
           </Card>
 
           <Card>
-            <CardTitle hint={`${note.backlinks.length}`}>Được nhắc tới ở</CardTitle>
+            <CardTitle hint={`${note.backlinks.length}`}>Referenced by</CardTitle>
             {note.backlinks.length === 0 ? (
-              <p className="text-xs text-muted">Chưa có ghi chú nào trỏ về đây.</p>
+              <p className="text-xs text-muted">No notes link back here yet.</p>
             ) : (
               <ul className="space-y-1 text-sm">
                 {note.backlinks.map((backlink) => (

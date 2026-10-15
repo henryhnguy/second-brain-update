@@ -63,7 +63,7 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    void load().catch(() => setMessage("Không tải được trạng thái."));
+    void load().catch(() => setMessage("Could not load status."));
   }, [load]);
 
   async function submitCapture() {
@@ -76,7 +76,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ text: capture, sourceKind: mode, title: capture.split("\n")[0]?.slice(0, 80) }),
       });
       setCapture("");
-      setMessage("Đã lưu vào bộ nhớ.");
+      setMessage("Saved to memory.");
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -89,15 +89,15 @@ export default function DashboardPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Tổng quan</h1>
-          <p className="text-sm text-muted">Bộ nhớ cá nhân của bạn, chạy hoàn toàn trên máy này.</p>
+          <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
+          <p className="text-sm text-muted">Your personal memory, running entirely on this machine.</p>
         </div>
         {health ? (
           <div className="flex flex-wrap gap-2">
-            <Badge tone={health.fts5 ? "good" : "warn"}>FTS5 {health.fts5 ? "bật" : "tắt"}</Badge>
-            <Badge tone={health.trigram ? "good" : "neutral"}>trigram {health.trigram ? "bật" : "tắt"}</Badge>
+            <Badge tone={health.fts5 ? "good" : "warn"}>FTS5 {health.fts5 ? "on" : "off"}</Badge>
+            <Badge tone={health.trigram ? "good" : "neutral"}>trigram {health.trigram ? "on" : "off"}</Badge>
             <Badge tone={health.worker.running ? "good" : "warn"}>
-              worker {health.worker.running ? "đang chạy" : "tạm dừng"}
+              worker {health.worker.running ? "running" : "paused"}
             </Badge>
             <Badge>SQLite {health.sqlite}</Badge>
           </div>
@@ -105,11 +105,11 @@ export default function DashboardPage() {
       </header>
 
       <Card>
-        <CardTitle hint="Ctrl/⌘ + Enter để lưu">Ghi nhanh</CardTitle>
+        <CardTitle hint="Ctrl/⌘ + Enter to save">Quick capture</CardTitle>
         <Tabs
           tabs={[
-            { id: "note", label: "Ghi chú" },
-            { id: "paste", label: "Văn bản thô" },
+            { id: "note", label: "Notes" },
+            { id: "paste", label: "Raw text" },
           ]}
           active={mode}
           onChange={setMode}
@@ -119,40 +119,40 @@ export default function DashboardPage() {
             value={capture}
             onChange={setCapture}
             rows={4}
-            placeholder="Viết một ghi chú, dán nội dung hoặc liên kết cần lưu…"
+            placeholder="Write a note, paste content or a link to save…"
           />
         </div>
         <div className="mt-3 flex items-center gap-2">
           <Button variant="primary" onClick={() => void submitCapture()} disabled={busy}>
-            {busy ? "Đang lưu…" : "Lưu vào bộ nhớ"}
+            {busy ? "Saving…" : "Save to memory"}
           </Button>
           <Link href="/import" className="text-xs text-muted hover:text-ink">
-            hoặc nhập từ tệp / thư mục / bản export
+            or import from a file / folder / export
           </Link>
         </div>
         {message ? (
           <div className="mt-3">
-            <Notice tone={message.includes("Đã lưu") ? "good" : "warn"}>{message}</Notice>
+            <Notice tone={message.includes("Saved") ? "good" : "warn"}>{message}</Notice>
           </div>
         ) : null}
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Tài liệu" value={stats?.documents ?? "—"} hint={stats?.lastIngestAt ? `mới nhất ${stats.lastIngestAt.slice(0, 16).replace("T", " ")}` : "chưa có dữ liệu"} />
-        <Stat label="Ghi chú" value={stats?.notes ?? "—"} />
-        <Stat label="Đoạn chỉ mục" value={stats?.chunks ?? "—"} hint={stats ? `DB ${bytes(stats.databaseBytes)}` : undefined} />
+        <Stat label="Documents" value={stats?.documents ?? "—"} hint={stats?.lastIngestAt ? `latest ${stats.lastIngestAt.slice(0, 16).replace("T", " ")}` : "no data yet"} />
+        <Stat label="Notes" value={stats?.notes ?? "—"} />
+        <Stat label="Indexed chunks" value={stats?.chunks ?? "—"} hint={stats ? `DB ${bytes(stats.databaseBytes)}` : undefined} />
         <Stat
           label="Embedding"
           value={stats ? `${Math.round(stats.embeddingCoverage * 100)}%` : "—"}
-          hint={stats?.aiConfigured ? `${stats.embeddings} vector` : "chưa cấu hình model"}
+          hint={stats?.aiConfigured ? `${stats.embeddings} vector` : "no model configured"}
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <CardTitle hint={<Link href="/library" className="hover:text-ink">Xem tất cả</Link>}>Vừa thêm gần đây</CardTitle>
+          <CardTitle hint={<Link href="/library" className="hover:text-ink">View all</Link>}>Recently added</CardTitle>
           {recent.length === 0 ? (
-            <EmptyState title="Chưa có tài liệu" hint="Dùng ô ghi nhanh ở trên, hoặc đồng bộ một thư mục ở mục Nhập dữ liệu." />
+            <EmptyState title="No documents yet" hint="Use the quick capture box above, or sync a folder under Import." />
           ) : (
             <ul className="space-y-2">
               {recent.map((doc) => (
@@ -162,7 +162,7 @@ export default function DashboardPage() {
                       {doc.title}
                     </Link>
                     <p className="mt-0.5 text-[11px] text-muted">
-                      {doc.sourceId} · {doc.chunkCount} đoạn · {(doc.createdAt ?? doc.ingestedAt).slice(0, 10)}
+                      {doc.sourceId} · {doc.chunkCount} chunks · {(doc.createdAt ?? doc.ingestedAt).slice(0, 10)}
                     </p>
                   </div>
                   <Badge>{doc.sourceKind}</Badge>
@@ -174,7 +174,7 @@ export default function DashboardPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardTitle hint={stats ? `${stats.bySource.length} nguồn` : undefined}>Kho tri thức</CardTitle>
+            <CardTitle hint={stats ? `${stats.bySource.length} sources` : undefined}>Knowledge base</CardTitle>
             {stats && stats.bySource.length > 0 ? (
               <ul className="space-y-1.5 text-sm">
                 {stats.bySource.map((entry) => (
@@ -185,14 +185,14 @@ export default function DashboardPage() {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-muted">Chưa có nguồn nào. Kết nối Gmail/Slack/Notion hoặc đồng bộ thư mục ghi chú.</p>
+              <p className="text-xs text-muted">No sources yet. Connect Gmail/Slack/Notion or sync a notes folder.</p>
             )}
           </Card>
 
           <Card>
-            <CardTitle hint={<Link href="/plays" className="hover:text-ink">Tự động hoá</Link>}>Tác vụ nền</CardTitle>
+            <CardTitle hint={<Link href="/plays" className="hover:text-ink">Automations</Link>}>Background jobs</CardTitle>
             {jobs.length === 0 ? (
-              <p className="text-xs text-muted">Không có tác vụ nào gần đây.</p>
+              <p className="text-xs text-muted">No recent jobs.</p>
             ) : (
               <ul className="space-y-1.5 text-sm">
                 {jobs.map((job) => (
@@ -209,8 +209,8 @@ export default function DashboardPage() {
 
       {stats && !stats.aiConfigured ? (
         <Notice tone="warn">
-          Chưa cấu hình model AI: tìm kiếm và hỏi đáp vẫn chạy ở chế độ từ khoá + trích dẫn trực tiếp. Thêm base URL/API key
-          (hoặc trỏ tới Ollama) trong <Link href="/settings" className="underline">Cài đặt</Link> để bật câu trả lời tổng hợp.
+          No AI model configured: search and ask still run in keyword mode with direct citations. Add a base URL/API key
+          (or point at Ollama) in <Link href="/settings" className="underline">Settings</Link> to enable synthesised answers.
         </Notice>
       ) : null}
     </div>

@@ -170,7 +170,7 @@ export async function syncConnector(connectorId: string, options: SyncOptions = 
   });
   recordEvent({
     kind: "connector.synced",
-    title: `${provider.label}: +${added} mới, ${updated} cập nhật${error ? " (có lỗi)" : ""}`,
+    title: `${provider.label}: +${added} new, ${updated} updated${error ? " (with errors)" : ""}`,
     connectorId: connector.id,
     detail: { status, pages, items, error },
   });
@@ -229,7 +229,7 @@ export function connectorHealth(connectorId: string): {
       connector,
       provider,
       ready: false,
-      reason: provider.auth.kind === "token" ? "chưa có thông tin đăng nhập" : "OAuth chưa hoàn tất",
+      reason: provider.auth.kind === "token" ? "no credentials stored" : "OAuth not finished",
     };
   }
   return { connector, provider, ready: true, reason: null };

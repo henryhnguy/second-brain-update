@@ -8,7 +8,7 @@ import { all, get, jsonParse, num, run, str, strOrNull } from "../sql";
 function mapConversation(row: Record<string, unknown>): Conversation {
   return {
     id: str(row.id),
-    title: str(row.title, "Cuộc trò chuyện"),
+    title: str(row.title, "Conversation"),
     scope: jsonParse<ChatScope>(row.scope, { mode: "all" }),
     model: strOrNull(row.model),
     createdAt: str(row.created_at),
@@ -37,7 +37,7 @@ export function createConversation(input: { title?: string; scope?: ChatScope; m
   run(
     getDb(),
     "INSERT INTO conversations (id, title, scope, model, pinned, created_at, updated_at) VALUES (?, ?, ?, ?, 0, ?, ?)",
-    [id, input.title ?? "Cuộc trò chuyện mới", JSON.stringify(input.scope ?? { mode: "all" }), input.model ?? null, at, at],
+    [id, input.title ?? "New conversation", JSON.stringify(input.scope ?? { mode: "all" }), input.model ?? null, at, at],
   );
   const conversation = getConversation(id);
   if (!conversation) throw new Error("could not create conversation");
@@ -156,7 +156,7 @@ export function countConversations(): number {
 export function maybeAutoTitle(conversationId: string, firstMessage: string): void {
   const conversation = getConversation(conversationId);
   if (!conversation) return;
-  if (conversation.title && conversation.title !== "Cuộc trò chuyện mới" && conversation.title !== "New conversation") return;
+  if (conversation.title && conversation.title !== "New conversation") return;
   const title = truncate(firstMessage.replace(/\s+/g, " ").trim(), 80);
   if (title.length > 0) renameConversation(conversationId, title);
 }

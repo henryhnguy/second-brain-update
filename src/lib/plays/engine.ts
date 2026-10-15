@@ -26,6 +26,8 @@ export type PlayRunOutcome = {
   output: string;
 };
 
+// Cues that something is still open. The Vietnamese words are functional, not
+// copy: they are how the play spots an unfinished task in Vietnamese notes.
 const OPEN_LOOP_PATTERNS = [
   /\bTODO\b/i,
   /\bFIXME\b/i,
@@ -40,37 +42,37 @@ const OPEN_LOOP_PATTERNS = [
 ];
 
 function section(title: string, body: string[]): string {
-  if (body.length === 0) return `### ${title}\n_Không có dữ liệu trong khoảng thời gian này._`;
+  if (body.length === 0) return `### ${title}\n_No data in this time range._`;
   return `### ${title}\n${body.join("\n")}`;
 }
 
 function documentLine(index: number, title: string, sourceId: string, at: string | null, extra = ""): string {
-  const when = at ? at.slice(0, 10) : "không rõ ngày";
+  const when = at ? at.slice(0, 10) : "date unknown";
   return `${index}. **${truncate(title, 110)}** — \`${sourceId}\` · ${when}${extra ? ` · ${extra}` : ""}`;
 }
 
 /** Deterministic digest used when no model is configured (and as an LLM fallback). */
 function buildDigestMarkdown(play: Play, data: DigestData): string {
-  const header = `## ${play.name}\n_Khoảng thời gian: ${data.since.slice(0, 10)} → ${data.until.slice(0, 10)} · ${data.documents.length} tài liệu · ${data.notes.length} ghi chú_`;
+  const header = `## ${play.name}\n_Range: ${data.since.slice(0, 10)} → ${data.until.slice(0, 10)} · ${data.documents.length} documents · ${data.notes.length} notes_`;
   const parts = [header];
 
   if (play.kind === "open_loops") {
-    parts.push(section("Việc còn dang dở", data.openLoops));
+    parts.push(section("Open loops", data.openLoops));
   } else if (play.kind === "find_file") {
-    parts.push(section("Tài liệu khớp nhất", data.topHits));
+    parts.push(section("Best matching documents", data.topHits));
   } else if (play.kind === "topic_dossier") {
-    parts.push(section("Dòng thời gian", data.timeline));
+    parts.push(section("Timeline", data.timeline));
   } else if (play.kind === "meeting_brief") {
-    parts.push(section("Tài liệu liên quan", data.topHits));
-    parts.push(section("Trao đổi gần đây", data.recentDialogue));
+    parts.push(section("Related documents", data.topHits));
+    parts.push(section("Recent activity", data.recentDialogue));
   } else {
-    parts.push(section("Tài liệu mới", data.documentLines));
-    parts.push(section("Ghi chú đã cập nhật", data.noteLines));
+    parts.push(section("New documents", data.documentLines));
+    parts.push(section("Updated notes", data.noteLines));
   }
 
-  if (data.entityLines.length > 0) parts.push(section("Nhân vật / chủ đề nổi bật", data.entityLines));
-  if (data.sourceLines.length > 0) parts.push(section("Phân bố theo nguồn", data.sourceLines));
-  parts.push(`\n> Bản tổng hợp không dùng model (chế độ từ khoá). Cấu hình model trong **Cài đặt** để có phần nhận định.`);
+  if (data.entityLines.length > 0) parts.push(section("Notable people / topics", data.entityLines));
+  if (data.sourceLines.length > 0) parts.push(section("Breakdown by source", data.sourceLines));
+  parts.push(`\n> This round-up is generated without a model (keyword mode). Configure a model in **Settings** for analysis.`);
   return parts.join("\n\n");
 }
 
@@ -108,7 +110,7 @@ async function gatherData(
   const entityLines = topEntities(12)
     .filter((entity) => entity.type === "person" || entity.type === "topic")
     .slice(0, 8)
-    .map((entity) => `- **${entity.name}** (${entity.type}) · ${entity.mentions} lần`);
+    .map((entity) => `- **${entity.name}** (${entity.type}) · ${entity.mentions} mentions`);
 
   const sourceCounts = new Map<string, number>();
   for (const doc of documents) sourceCounts.set(doc.sourceId, (sourceCounts.get(doc.sourceId) ?? 0) + 1);
@@ -229,7 +231,7 @@ export async function runPlay(
       try {
         const result = await chatComplete(
           [
-            { role: "system", content: "Bạn tổng hợp bộ nhớ cá nhân thành báo cáo Markdown tiếng Việt, có trích dẫn [n]." },
+            { role: "system", content: "You turn a personal memory into a Markdown report in the language of the request, with [n] citations." },
             {
               role: "user",
               content: buildPlayUserMessage({
@@ -251,7 +253,7 @@ export async function runPlay(
           playId,
           error: error instanceof Error ? error.message : String(error),
         });
-        output = `${deterministic}\n\n> Model lỗi: ${error instanceof Error ? error.message : String(error)}`;
+        output = `${deterministic}\n\n> Model error: ${error instanceof Error ? error.message : String(error)}`;
         usage = { mode: "deterministic-fallback" };
       }
     }
@@ -286,7 +288,7 @@ function nowIsoFallback(): string {
 export function playSchedules(): { play: Play; nextHint: string }[] {
   return listPlays().map((play) => ({
     play,
-    nextHint: play.schedule ? `cron: ${play.schedule}` : "chạy thủ công",
+    nextHint: play.schedule ? `cron: ${play.schedule}` : "manual run",
   }));
 }
 
@@ -300,11 +302,11 @@ export function memoryDigest(days = 7): string {
     graph: graphSnapshot(20).nodes.length,
   };
   const lines = [
-    `# Bộ nhớ ${since.slice(0, 10)} → ${new Date().toISOString().slice(0, 10)}`,
-    `- Tài liệu: **${stats.documents}**`,
-    `- Sự kiện mới: **${stats.events}**`,
-    `- Thẻ: **${stats.tags}**`,
-    `- Thực thể: **${stats.entities}** (bản đồ: ${stats.graph} nút)`,
+    `# Memory ${since.slice(0, 10)} → ${new Date().toISOString().slice(0, 10)}`,
+    `- Documents: **${stats.documents}**`,
+    `- New events: **${stats.events}**`,
+    `- Tags: **${stats.tags}**`,
+    `- Entities: **${stats.entities}** (graph: ${stats.graph} nodes)`,
   ];
   return lines.join("\n");
 }

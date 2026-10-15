@@ -48,18 +48,18 @@ export default function TimelinePage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Dòng thời gian</h1>
-        <p className="text-sm text-muted">Mọi thứ bạn đã lưu, theo thứ tự thời gian — kèm mật độ hoạt động 60 ngày.</p>
+        <h1 className="text-xl font-semibold tracking-tight">Timeline</h1>
+        <p className="text-sm text-muted">Everything you have saved, in chronological order — plus activity density over 60 days.</p>
       </header>
 
       {error ? <Notice tone="warn">{error}</Notice> : null}
 
       <Card>
-        <CardTitle hint={`${days.length} ngày có hoạt động`}>Mật độ theo ngày</CardTitle>
+        <CardTitle hint={`${days.length} active days`}>Daily activity</CardTitle>
         {loading && days.length === 0 ? (
           <Spinner />
         ) : days.length === 0 ? (
-          <p className="text-xs text-muted">Chưa có hoạt động nào được ghi lại.</p>
+          <p className="text-xs text-muted">No activity recorded yet.</p>
         ) : (
           <div className="flex h-24 items-end gap-1">
             {days
@@ -76,14 +76,14 @@ export default function TimelinePage() {
           </div>
         )}
         <p className="mt-2 text-[11px] text-muted">
-          Cột cao nhất: {max} sự kiện/ngày. Sự kiện được ghi tự động khi nạp tài liệu, đồng bộ connector, chạy play.
+          Tallest bar: {max} events/day. Events are recorded automatically when documents are imported, connectors sync, or a play runs.
         </p>
       </Card>
 
       {loading && events.length === 0 ? (
         <Spinner />
       ) : events.length === 0 ? (
-        <EmptyState title="Chưa có sự kiện" hint="Nạp một tệp hoặc đồng bộ một thư mục để bắt đầu dòng thời gian." />
+        <EmptyState title="No events yet" hint="Import a file or sync a folder to start your timeline." />
       ) : (
         <ol className="relative space-y-3 border-l border-line pl-4">
           {events.map((event) => (

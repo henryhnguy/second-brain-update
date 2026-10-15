@@ -60,7 +60,7 @@ export default function DocumentDetailPage() {
   }, [load]);
 
   async function remove(hard: boolean) {
-    if (!confirm(hard ? "Xoá vĩnh viễn tài liệu này (không thể hoàn tác)?" : "Chuyển tài liệu vào trạng thái đã xoá?")) return;
+    if (!confirm(hard ? "Delete this document permanently (cannot be undone)?" : "Move this document to deleted?")) return;
     await api(`/api/v1/documents/${id}${hard ? "?hard=1" : ""}`, { method: "DELETE" });
     router.push("/library");
   }
@@ -72,7 +72,7 @@ export default function DocumentDetailPage() {
   }
 
   if (error) return <Notice tone="warn">{error}</Notice>;
-  if (!detail) return <Spinner label="Đang mở tài liệu…" />;
+  if (!detail) return <Spinner label="Opening document…" />;
 
   const doc = detail.document;
 
@@ -80,16 +80,16 @@ export default function DocumentDetailPage() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/library" className="text-xs text-muted hover:text-ink">
-          ← Thư viện
+          ← Library
         </Link>
         <div className="flex gap-2">
-          <Button onClick={() => void togglePin()}>{doc.pinned ? "Bỏ ghim" : "Ghim"}</Button>
+          <Button onClick={() => void togglePin()}>{doc.pinned ? "Unpin" : "Pin"}</Button>
           {doc.sourceKind === "note" ? (
             <Link
               href={`/notes/${doc.id}`}
               className="rounded-xl border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent/60"
             >
-              Mở trong Ghi chú
+              Open in Notes
             </Link>
           ) : null}
           {doc.url ? (
@@ -99,11 +99,11 @@ export default function DocumentDetailPage() {
               rel="noreferrer"
               className="rounded-xl border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent/60"
             >
-              Mở nguồn ↗
+              Open source ↗
             </a>
           ) : null}
           <Button variant="danger" onClick={() => void remove(false)}>
-            Xoá
+            Delete
           </Button>
         </div>
       </header>
@@ -118,12 +118,12 @@ export default function DocumentDetailPage() {
         <div className="mt-4">
           <KeyValue
             items={[
-              { label: "Tác giả", value: doc.author ?? "—" },
-              { label: "Đường dẫn", value: doc.path ?? "—" },
+              { label: "Author", value: doc.author ?? "—" },
+              { label: "Path", value: doc.path ?? "—" },
               { label: "URL", value: doc.url ?? "—" },
-              { label: "Tạo", value: (doc.createdAt ?? doc.ingestedAt).slice(0, 19).replace("T", " ") },
-              { label: "Cập nhật", value: (doc.updatedAt ?? doc.ingestedAt).slice(0, 19).replace("T", " ") },
-              { label: "Kích thước", value: `${doc.charCount} ký tự · ${doc.tokenCount} token · ${doc.chunkCount} đoạn` },
+              { label: "Created", value: (doc.createdAt ?? doc.ingestedAt).slice(0, 19).replace("T", " ") },
+              { label: "Updated", value: (doc.updatedAt ?? doc.ingestedAt).slice(0, 19).replace("T", " ") },
+              { label: "Size", value: `${doc.charCount} characters · ${doc.tokenCount} tokens · ${doc.chunkCount} chunks` },
               { label: "Content hash", value: <span className="font-mono text-xs">{doc.contentHash.slice(0, 24)}…</span> },
             ]}
           />
@@ -131,9 +131,9 @@ export default function DocumentDetailPage() {
       </Card>
 
       <Card>
-        <CardTitle hint={`${detail.chunks.length} đoạn được đánh chỉ mục`}>Nội dung đã lập chỉ mục</CardTitle>
+        <CardTitle hint={`${detail.chunks.length} indexed chunks`}>Indexed content</CardTitle>
         {detail.chunks.length === 0 ? (
-          <p className="text-xs text-muted">Tài liệu này không có đoạn nào (có thể phần trích xuất văn bản rỗng).</p>
+          <p className="text-xs text-muted">This document has no chunks (the text extract may be empty).</p>
         ) : (
           <ol className="space-y-3">
             {detail.chunks.map((chunk) => (
@@ -142,7 +142,7 @@ export default function DocumentDetailPage() {
                   <span>#{chunk.ord + 1}</span>
                   {chunk.headingPath ? <span className="truncate">› {chunk.headingPath}</span> : null}
                   <span className="ml-auto">
-                    ký tự {chunk.charStart}–{chunk.charEnd} · ~{chunk.tokenEstimate} token
+                    characters {chunk.charStart}–{chunk.charEnd} · ~{chunk.tokenEstimate} tokens
                   </span>
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed">{chunk.text}</p>
@@ -153,7 +153,7 @@ export default function DocumentDetailPage() {
       </Card>
 
       <Card>
-        <CardTitle>Metadata gốc</CardTitle>
+        <CardTitle>Raw metadata</CardTitle>
         <pre className="max-h-64 overflow-auto rounded-xl border border-line bg-raised p-3 text-[11px]">
           {JSON.stringify(doc.meta, null, 2)}
         </pre>

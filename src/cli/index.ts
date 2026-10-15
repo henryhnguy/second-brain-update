@@ -148,7 +148,7 @@ async function main(): Promise<number> {
           ...(typeof args.flags.tag === "string" ? { tags: [args.flags.tag] } : {}),
         },
       });
-      console.log(`${response.total} kết quả trong ${response.tookMs}ms (mode ${response.mode}, semantic=${response.semanticAvailable})`);
+      console.log(`${response.total} results in ${response.tookMs}ms (mode ${response.mode}, semantic=${response.semanticAvailable})`);
       for (const hit of response.hits) {
         console.log(`\n${hit.score.toFixed(3)}  ${hit.title}`);
         console.log(`       ${hit.sourceId}${hit.createdAt ? ` · ${hit.createdAt.slice(0, 10)}` : ""} · ${hit.documentId}`);
@@ -166,7 +166,7 @@ async function main(): Promise<number> {
       const result = await answer({ message: question, scope: { mode: "all" } });
       console.log(result.content);
       if (result.citations.length > 0) {
-        console.log("\nNguồn:");
+        console.log("\nSources:");
         for (const citation of result.citations) {
           console.log(`  [${citation.index}] ${citation.title} — ${citation.sourceId}`);
         }
@@ -285,7 +285,7 @@ async function main(): Promise<number> {
           connector.hasCredentials,
       );
       if (connectors.length === 0) {
-        console.log("Không có connector nào đã kết nối. Xem `health` hoặc mở mục Kết nối trong app.");
+        console.log("No connector is connected yet. Run `health`, or open the Connectors page in the app.");
         return 0;
       }
       out(await syncEnabledConnectors({ maxItems: num(args.flags["max-items"], 120) }));
@@ -318,7 +318,7 @@ async function main(): Promise<number> {
         }
         const outcome = await runPlay(playId, params);
         console.log(outcome.output);
-        console.log(`\n(${outcome.usedLlm ? "có model" : "không model"} · ${outcome.citations.length} trích dẫn)`);
+        console.log(`\n(${outcome.usedLlm ? "with model" : "without model"} · ${outcome.citations.length} citations)`);
         return 0;
       }
       if (sub === "runs") {
@@ -350,7 +350,7 @@ async function main(): Promise<number> {
       };
       if (typeof args.flags.out === "string") {
         fs.writeFileSync(args.flags.out, JSON.stringify(payload, null, 2), "utf8");
-        console.log(`Đã ghi ${payload.count} tài liệu vào ${args.flags.out}`);
+        console.log(`Wrote ${payload.count} documents to ${args.flags.out}`);
       } else {
         console.log(JSON.stringify(payload, null, 2));
       }

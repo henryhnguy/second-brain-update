@@ -42,7 +42,7 @@ export default function NotesPage() {
     try {
       const result = await api<{ note: { document: { id: string } } }>("/api/v1/notes", {
         method: "POST",
-        body: JSON.stringify({ title: "Ghi chú mới", markdown: "" }),
+        body: JSON.stringify({ title: "New note", markdown: "" }),
       });
       router.push(`/notes/${result.note.document.id}`);
     } catch (error) {
@@ -54,20 +54,20 @@ export default function NotesPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Ghi chú</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Notes</h1>
           <p className="text-sm text-muted">
-            Markdown thuần, được đánh chỉ mục ngay khi lưu. Dùng <code className="rounded bg-raised px-1">[[Tên ghi chú]]</code> để
-            liên kết và <code className="rounded bg-raised px-1">#thẻ</code> để phân loại.
+            Plain Markdown, indexed the moment you save. Use <code className="rounded bg-raised px-1">[[Note title]]</code> to
+            link and <code className="rounded bg-raised px-1">#tag</code> to categorise.
           </p>
         </div>
         <Button variant="primary" onClick={() => void createNote()}>
-          + Ghi chú mới
+          + New note
         </Button>
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="w-64">
-          <Input value={query} onChange={setQuery} placeholder="Tìm trong ghi chú…" />
+          <Input value={query} onChange={setQuery} placeholder="Search notes…" />
         </div>
         <div className="flex flex-wrap gap-1.5">
           <button
@@ -75,7 +75,7 @@ export default function NotesPage() {
             onClick={() => setActiveTag(null)}
             className={`rounded-full border px-2.5 py-0.5 text-[11px] ${activeTag === null ? "border-accent text-accent" : "border-line text-muted hover:text-ink"}`}
           >
-            tất cả
+            all
           </button>
           {tags.slice(0, 18).map((tag) => (
             <button
@@ -94,9 +94,9 @@ export default function NotesPage() {
 
       {notes.length === 0 ? (
         <EmptyState
-          title="Chưa có ghi chú nào"
-          hint="Tạo ghi chú đầu tiên, hoặc đồng bộ một vault Obsidian ở mục Nhập dữ liệu."
-          action={<Button onClick={() => void createNote()}>Tạo ghi chú</Button>}
+          title="No notes yet"
+          hint="Create your first note, or sync an Obsidian vault under Import."
+          action={<Button onClick={() => void createNote()}>Create note</Button>}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -105,9 +105,9 @@ export default function NotesPage() {
               <Card className="h-full transition hover:border-accent/60">
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="line-clamp-1 text-sm font-medium">{item.document.title}</h2>
-                  {item.document.pinned ? <Badge tone="accent">ghim</Badge> : null}
+                  {item.document.pinned ? <Badge tone="accent">pinned</Badge> : null}
                 </div>
-                <p className="mt-2 line-clamp-3 text-xs text-muted">{item.excerpt || "(chưa có nội dung)"}</p>
+                <p className="mt-2 line-clamp-3 text-xs text-muted">{item.excerpt || "(no content yet)"}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-1.5">
                   {item.tags.slice(0, 4).map((tag) => (
                     <Badge key={tag.id}>#{tag.name}</Badge>
@@ -123,9 +123,9 @@ export default function NotesPage() {
       )}
 
       <Card>
-        <CardTitle>Thẻ đang dùng</CardTitle>
+        <CardTitle>Tags in use</CardTitle>
         {tags.length === 0 ? (
-          <p className="text-xs text-muted">Chưa có thẻ nào — thêm #thẻ vào ghi chú để tạo.</p>
+          <p className="text-xs text-muted">No tags yet — add #tag to a note to create one.</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {tags.map((tag) => (

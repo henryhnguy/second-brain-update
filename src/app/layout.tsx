@@ -6,12 +6,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Second Brain",
-  description: "Bộ nhớ cá nhân chạy trên máy: thu thập, tìm kiếm và hỏi đáp có trích dẫn.",
+  description: "A personal memory that runs on your machine: capture, search and ask with citations.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="vi" data-theme="dark">
+    <html lang="en" data-theme="dark">
       <body className="min-h-screen bg-canvas text-ink">
         <AppShell>{children}</AppShell>
       </body>

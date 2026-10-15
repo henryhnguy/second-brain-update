@@ -16,17 +16,17 @@ type Stats = {
 };
 
 const NAV = [
-  { href: "/", label: "Tổng quan", icon: "◍" },
-  { href: "/notes", label: "Ghi chú", icon: "✎" },
-  { href: "/library", label: "Thư viện", icon: "▤" },
-  { href: "/search", label: "Tìm kiếm", icon: "⌕" },
-  { href: "/chat", label: "Hỏi đáp", icon: "✦" },
-  { href: "/plays", label: "Tự động hoá", icon: "⚙" },
-  { href: "/connectors", label: "Kết nối", icon: "⧉" },
-  { href: "/import", label: "Nhập dữ liệu", icon: "↧" },
-  { href: "/timeline", label: "Dòng thời gian", icon: "≡" },
-  { href: "/graph", label: "Bản đồ tri thức", icon: "◈" },
-  { href: "/settings", label: "Cài đặt", icon: "⚒" },
+  { href: "/", label: "Overview", icon: "◍" },
+  { href: "/notes", label: "Notes", icon: "✎" },
+  { href: "/library", label: "Library", icon: "▤" },
+  { href: "/search", label: "Search", icon: "⌕" },
+  { href: "/chat", label: "Ask", icon: "✦" },
+  { href: "/plays", label: "Automations", icon: "⚙" },
+  { href: "/connectors", label: "Connectors", icon: "⧉" },
+  { href: "/import", label: "Import", icon: "↧" },
+  { href: "/timeline", label: "Timeline", icon: "≡" },
+  { href: "/graph", label: "Knowledge graph", icon: "◈" },
+  { href: "/settings", label: "Settings", icon: "⚒" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -58,12 +58,12 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold tracking-tight">Second Brain</p>
-              <p className="text-[11px] text-muted">Bộ nhớ cá nhân · local-first</p>
+              <p className="text-[11px] text-muted">Personal memory · local-first</p>
             </div>
             <button
               type="button"
               onClick={toggleTheme}
-              title="Đổi giao diện sáng/tối"
+              title="Toggle light/dark theme"
               className="rounded-lg border border-line px-2 py-1 text-xs text-muted hover:text-ink"
             >
               {theme === "dark" ? "☾" : "☀"}
@@ -78,11 +78,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <div className="mt-4 space-y-2 border-t border-line pt-3 text-[11px] text-muted">
             <div className="flex items-center justify-between">
-              <span>Tài liệu</span>
+              <span>Documents</span>
               <span className="tabular-nums text-ink">{stats?.documents ?? "—"}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span>Đoạn chỉ mục</span>
+              <span>Indexed chunks</span>
               <span className="tabular-nums text-ink">{stats?.chunks ?? "—"}</span>
             </div>
             <div className="flex items-center justify-between">
@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             </div>
             <div className="pt-1">
-              {stats?.aiConfigured ? <Badge tone="good">AI đã bật</Badge> : <Badge tone="warn">Chế độ từ khoá</Badge>}
+              {stats?.aiConfigured ? <Badge tone="good">AI enabled</Badge> : <Badge tone="warn">Keyword mode</Badge>}
             </div>
           </div>
         </div>
@@ -104,7 +104,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           onClick={() => setNavOpen((open) => !open)}
           className="mb-3 rounded-xl border border-line px-3 py-1.5 text-xs text-muted lg:hidden"
         >
-          {navOpen ? "Đóng menu" : "Mở menu"}
+          {navOpen ? "Close menu" : "Open menu"}
         </button>
         {children}
       </main>

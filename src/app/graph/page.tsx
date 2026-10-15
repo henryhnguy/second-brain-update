@@ -80,9 +80,10 @@ export default function GraphPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Bản đồ tri thức</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Knowledge graph</h1>
           <p className="text-sm text-muted">
-            Người, chủ đề, thẻ và địa chỉ xuất hiện cùng nhau trong bộ nhớ. Cạnh càng đậm nghĩa là xuất hiện cùng nhau càng nhiều.
+            People, topics, tags and addresses that appear together in your memory. The darker the edge, the more often they show up
+            together.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -91,12 +92,12 @@ export default function GraphPage() {
             onChange={(event) => setLimit(Number(event.target.value))}
             className="rounded-xl border border-line bg-raised px-3 py-1.5 text-sm"
           >
-            <option value={30}>30 nút</option>
-            <option value={60}>60 nút</option>
-            <option value={120}>120 nút</option>
-            <option value={200}>200 nút</option>
+            <option value={30}>30 nodes</option>
+            <option value={60}>60 nodes</option>
+            <option value={120}>120 nodes</option>
+            <option value={200}>200 nodes</option>
           </select>
-          <Button onClick={() => void load()}>Làm mới</Button>
+          <Button onClick={() => void load()}>Refresh</Button>
         </div>
       </header>
 
@@ -106,19 +107,19 @@ export default function GraphPage() {
         <Spinner />
       ) : !graph || graph.nodes.length === 0 ? (
         <EmptyState
-          title="Chưa đủ dữ liệu để dựng bản đồ"
-          hint="Bản đồ được xây từ thực thể trích xuất khi nạp dữ liệu: tên người trong email, [[liên kết]] trong ghi chú, #thẻ, tên miền."
+          title="Not enough data to draw the graph"
+          hint="The graph is built from entities extracted during import: names in emails, [[links]] in notes, #tags, domains."
           action={
             <Link href="/import" className="rounded-xl border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent/60">
-              Nhập dữ liệu
+              Import
             </Link>
           }
         />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
           <Card className="overflow-hidden">
-            <CardTitle hint={`${graph.nodes.length} nút · ${graph.edges.length} cạnh${graph.truncated ? " (đã giới hạn)" : ""}`}>
-              Mạng thực thể
+            <CardTitle hint={`${graph.nodes.length} nodes · ${graph.edges.length} edges${graph.truncated ? " (truncated)" : ""}`}>
+              Entity network
             </CardTitle>
             <svg viewBox="0 0 900 620" className="h-[32rem] w-full">
               {graph.edges.map((edge, index) => {
@@ -169,7 +170,7 @@ export default function GraphPage() {
           </Card>
 
           <Card>
-            <CardTitle hint="theo số lần xuất hiện">Thực thể nổi bật</CardTitle>
+            <CardTitle hint="by number of mentions">Top entities</CardTitle>
             <ul className="space-y-1.5 text-sm">
               {entities.map((entity) => (
                 <li key={entity.id} className="flex items-center justify-between gap-2">
@@ -182,8 +183,8 @@ export default function GraphPage() {
               ))}
             </ul>
             <p className="mt-3 text-[11px] text-muted">
-              Trích xuất thực thể là heuristic (email, tên miền, #thẻ, [[liên kết]], cụm từ viết hoa lặp lại) — không gọi model,
-              nên chạy được cả khi chưa cấu hình AI.
+              Entity extraction is heuristic (emails, domains, #tags, [[links]], repeated capitalized phrases) — it does not call a model,
+              so it works even with no AI configured.
             </p>
           </Card>
         </div>

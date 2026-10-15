@@ -69,7 +69,7 @@ export async function* streamAnswer(request: ChatRequest, deps: ChatDeps = {}): 
   const config = deps.config ?? getAiConfig();
   const message = request.message.trim();
   if (message.length === 0) {
-    yield { type: "error", code: "bad_request", message: "Câu hỏi đang trống." };
+    yield { type: "error", code: "bad_request", message: "The question is empty." };
     return;
   }
 
@@ -104,7 +104,7 @@ export async function* streamAnswer(request: ChatRequest, deps: ChatDeps = {}): 
 
   if (!config.configured) {
     const text = buildExtractiveAnswer(message, citations);
-    yield { type: "notice", text: "Chưa cấu hình model — hiển thị trích dẫn trực tiếp từ bộ nhớ." };
+    yield { type: "notice", text: "No model configured — showing citations straight from your memory." };
     yield { type: "delta", text };
     const stored = appendMessage({
       conversationId: conversation.id,
@@ -158,8 +158,8 @@ export async function* streamAnswer(request: ChatRequest, deps: ChatDeps = {}): 
 
   if (failure && buffer.trim().length === 0) {
     logger.warn("model call failed; falling back to extractive answer", { error: failure.message });
-    const fallback = `${buildExtractiveAnswer(message, citations)}\n\n> Lưu ý: gọi model thất bại (${failure.code}). Nội dung trên lấy trực tiếp từ bộ nhớ.`;
-    yield { type: "notice", text: `Model lỗi: ${failure.message}` };
+    const fallback = `${buildExtractiveAnswer(message, citations)}\n\n> Note: the model call failed (${failure.code}). The text above comes straight from your memory.`;
+    yield { type: "notice", text: `Model error: ${failure.message}` };
     yield { type: "delta", text: fallback };
     const stored = appendMessage({
       conversationId: conversation.id,
@@ -183,7 +183,7 @@ export async function* streamAnswer(request: ChatRequest, deps: ChatDeps = {}): 
   }
 
   if (failure) {
-    yield { type: "notice", text: `Kết nối model bị ngắt: ${failure.message}` };
+    yield { type: "notice", text: `Model connection dropped: ${failure.message}` };
   }
 
   const content = buffer.trim().length > 0 ? buffer : buildExtractiveAnswer(message, citations);

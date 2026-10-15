@@ -31,12 +31,12 @@ type PlayRun = {
 };
 
 const PARAM_HINTS: Record<string, { key: string; label: string; placeholder: string }[]> = {
-  meeting_brief: [{ key: "topic", label: "Chủ đề / người tham dự", placeholder: "ví dụ: họp với khách hàng A" }],
-  topic_dossier: [{ key: "topic", label: "Chủ đề", placeholder: "ví dụ: thanh toán" }],
-  find_file: [{ key: "query", label: "Từ khoá tài liệu", placeholder: "ví dụ: slide kiến trúc" }],
-  weekly_digest: [{ key: "days", label: "Số ngày", placeholder: "7" }],
-  daily_brief: [{ key: "days", label: "Số ngày", placeholder: "1" }],
-  open_loops: [{ key: "days", label: "Số ngày", placeholder: "30" }],
+  meeting_brief: [{ key: "topic", label: "Topic / attendees", placeholder: "e.g. meeting with customer A" }],
+  topic_dossier: [{ key: "topic", label: "Topic", placeholder: "e.g. payments" }],
+  find_file: [{ key: "query", label: "Document keyword", placeholder: "e.g. architecture slides" }],
+  weekly_digest: [{ key: "days", label: "Days", placeholder: "7" }],
+  daily_brief: [{ key: "days", label: "Days", placeholder: "1" }],
+  open_loops: [{ key: "days", label: "Days", placeholder: "30" }],
 };
 
 export default function PlaysPage() {
@@ -101,10 +101,10 @@ export default function PlaysPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Tự động hoá</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Automations</h1>
         <p className="text-sm text-muted">
-          Các quy trình dựng sẵn chạy trên chính bộ nhớ của bạn. Không có model thì app xuất bản tổng hợp deterministic; có model
-          thì thêm phần nhận định kèm trích dẫn.
+          Ready-made workflows that run on your own memory. With no model, the app produces a deterministic summary; with a model it
+          adds commentary with citations.
         </p>
       </header>
 
@@ -120,7 +120,7 @@ export default function PlaysPage() {
                   <h2 className="text-sm font-semibold">{play.name}</h2>
                   <p className="mt-1 text-xs text-muted">{play.description}</p>
                 </div>
-                <Badge tone={play.enabled ? "good" : "neutral"}>{play.enabled ? "bật" : "tắt"}</Badge>
+                <Badge tone={play.enabled ? "good" : "neutral"}>{play.enabled ? "on" : "off"}</Badge>
               </div>
 
               {(PARAM_HINTS[play.kind] ?? []).length > 0 ? (
@@ -140,12 +140,12 @@ export default function PlaysPage() {
 
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Button variant="primary" onClick={() => void run(play)} disabled={busy === play.id}>
-                  {busy === play.id ? "Đang chạy…" : "Chạy ngay"}
+                  {busy === play.id ? "Running…" : "Run now"}
                 </Button>
-                <Button onClick={() => void toggle(play)}>{play.enabled ? "Tạm tắt" : "Bật"}</Button>
+                <Button onClick={() => void toggle(play)}>{play.enabled ? "Turn off" : "Turn on"}</Button>
                 <span className="text-[11px] text-muted">
-                  {play.schedule ? `lịch: ${play.schedule}` : "chạy thủ công"}
-                  {play.lastRunAt ? ` · lần cuối ${play.lastRunAt.slice(0, 16).replace("T", " ")}` : ""}
+                  {play.schedule ? `schedule: ${play.schedule}` : "runs manually"}
+                  {play.lastRunAt ? ` · last run ${play.lastRunAt.slice(0, 16).replace("T", " ")}` : ""}
                 </span>
               </div>
             </Card>
@@ -155,21 +155,21 @@ export default function PlaysPage() {
         <div className="space-y-4">
           <Card>
             <CardTitle hint={active ? active.startedAt.slice(0, 16).replace("T", " ") : undefined}>
-              {active ? `Kết quả · ${active.playName}` : "Kết quả"}
+              {active ? `Output · ${active.playName}` : "Output"}
             </CardTitle>
             {!active ? (
-              <EmptyState title="Chưa có kết quả" hint="Chọn một quy trình bên trái và bấm “Chạy ngay”." />
+              <EmptyState title="No output yet" hint="Pick a workflow on the left and click &quot;Run now&quot;." />
             ) : (
               <>
                 <div className="mb-2 flex flex-wrap gap-2">
-                  <Badge tone={active.usedLlm ? "good" : "neutral"}>{active.usedLlm ? "có model" : "không model"}</Badge>
+                  <Badge tone={active.usedLlm ? "good" : "neutral"}>{active.usedLlm ? "with model" : "no model"}</Badge>
                   <Badge>{active.status}</Badge>
-                  {active.citations.length > 0 ? <Badge tone="accent">{active.citations.length} nguồn</Badge> : null}
+                  {active.citations.length > 0 ? <Badge tone="accent">{active.citations.length} sources</Badge> : null}
                 </div>
-                {active.output ? <Markdown citations={active.citations}>{active.output}</Markdown> : <p className="text-xs text-muted">Không có nội dung.</p>}
+                {active.output ? <Markdown citations={active.citations}>{active.output}</Markdown> : <p className="text-xs text-muted">No content.</p>}
                 {active.citations.length > 0 ? (
                   <details className="mt-4">
-                    <summary className="cursor-pointer text-xs text-muted">Nguồn tham chiếu</summary>
+                    <summary className="cursor-pointer text-xs text-muted">Sources</summary>
                     <div className="mt-2 rounded-xl border border-line bg-raised/60 p-3">
                       <CitationList citations={active.citations} />
                     </div>
@@ -180,9 +180,9 @@ export default function PlaysPage() {
           </Card>
 
           <Card>
-            <CardTitle hint={`${runs.length}`}>Lịch sử chạy</CardTitle>
+            <CardTitle hint={`${runs.length}`}>Run history</CardTitle>
             {runs.length === 0 ? (
-              <p className="text-xs text-muted">Chưa chạy lần nào.</p>
+              <p className="text-xs text-muted">No runs yet.</p>
             ) : (
               <ul className="space-y-1.5 text-sm">
                 {runs.map((run) => (

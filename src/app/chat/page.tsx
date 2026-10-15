@@ -183,9 +183,10 @@ export default function ChatPage() {
     <div className="space-y-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Hỏi đáp với bộ nhớ</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Ask your memory</h1>
           <p className="text-sm text-muted">
-            Câu trả lời chỉ dựa trên dữ liệu của bạn và kèm trích dẫn. Chưa cấu hình model thì app trả về trích dẫn trực tiếp.
+            Answers are based only on your own data and come with citations. With no model configured, the app returns citations
+            directly.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -194,20 +195,20 @@ export default function ChatPage() {
             onChange={(event) => setScope(event.target.value as ScopeMode)}
             className="rounded-xl border border-line bg-raised px-3 py-1.5 text-sm"
           >
-            <option value="all">Toàn bộ bộ nhớ</option>
-            <option value="notes">Chỉ ghi chú</option>
+            <option value="all">All memory</option>
+            <option value="notes">Notes only</option>
           </select>
-          <Button onClick={() => void newConversation()}>Cuộc trò chuyện mới</Button>
+          <Button onClick={() => void newConversation()}>New chat</Button>
         </div>
       </header>
 
       {!aiConfigured ? (
         <Notice tone="warn">
-          Chưa cấu hình model: mỗi câu hỏi sẽ trả về danh sách trích dẫn liên quan nhất.{" "}
+          No model configured: each question returns the most relevant citations.{" "}
           <Link href="/settings" className="underline">
-            Thêm base URL/API key hoặc trỏ tới Ollama
+            Add a base URL/API key or point to Ollama
           </Link>{" "}
-          để có câu trả lời tổng hợp.
+          to get a synthesized answer.
         </Notice>
       ) : null}
 
@@ -216,8 +217,8 @@ export default function ChatPage() {
           <div ref={scrollRef} className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
             {messages.length === 0 && !streamText ? (
               <EmptyState
-                title="Hỏi bất cứ điều gì về dữ liệu của bạn"
-                hint="Ví dụ: “Tuần này tôi đã trao đổi gì với khách hàng A?”, “Tìm slide về kiến trúc thanh toán”, “Việc nào còn dang dở?”"
+                title="Ask anything about your data"
+                hint="For example: &quot;What did I discuss with customer A this week?&quot;, &quot;Find slides about the payments architecture&quot;, &quot;Which tasks are still open?&quot;"
               />
             ) : null}
 
@@ -236,7 +237,7 @@ export default function ChatPage() {
                 </div>
                 {message.role === "assistant" && message.citations.length > 0 ? (
                   <details className="mt-2 text-left">
-                    <summary className="cursor-pointer text-xs text-muted">Nguồn tham chiếu ({message.citations.length})</summary>
+                    <summary className="cursor-pointer text-xs text-muted">Sources ({message.citations.length})</summary>
                     <div className="mt-2 rounded-xl border border-line bg-surface p-3">
                       <CitationList citations={message.citations} />
                     </div>
@@ -253,7 +254,7 @@ export default function ChatPage() {
               </div>
             ) : null}
 
-            {pending && !streamText ? <p className="text-xs text-muted">Đang tìm trong bộ nhớ…</p> : null}
+            {pending && !streamText ? <p className="text-xs text-muted">Searching your memory…</p> : null}
           </div>
 
           <div className="mt-3 border-t border-line pt-3">
@@ -264,10 +265,10 @@ export default function ChatPage() {
                 value={input}
                 onChange={setInput}
                 rows={2}
-                placeholder="Hỏi về email, ghi chú, lịch, tài liệu… (Enter để gửi, Shift+Enter xuống dòng)"
+                placeholder="Ask about emails, notes, calendar, documents… (Enter to send, Shift+Enter for a new line)"
               />
               <Button variant="primary" onClick={() => void send()} disabled={pending}>
-                Gửi
+                Send
               </Button>
             </div>
           </div>
@@ -275,9 +276,9 @@ export default function ChatPage() {
 
         <div className="space-y-4">
           <Card>
-            <CardTitle hint={`${conversations.length}`}>Lịch sử</CardTitle>
+            <CardTitle hint={`${conversations.length}`}>History</CardTitle>
             {conversations.length === 0 ? (
-              <p className="text-xs text-muted">Chưa có cuộc trò chuyện nào.</p>
+              <p className="text-xs text-muted">No conversations yet.</p>
             ) : (
               <ul className="space-y-1.5 text-sm">
                 {conversations.map((conversation) => (
@@ -294,7 +295,7 @@ export default function ChatPage() {
                       onClick={() => void deleteConversation(conversation.id)}
                       className="text-[11px] text-muted opacity-0 transition group-hover:opacity-100"
                     >
-                      xoá
+                      delete
                     </button>
                   </li>
                 ))}
@@ -303,16 +304,16 @@ export default function ChatPage() {
           </Card>
 
           <Card>
-            <CardTitle>Cách trả lời hoạt động</CardTitle>
+            <CardTitle>How answers work</CardTitle>
             <ol className="list-decimal space-y-1 pl-4 text-xs text-muted">
-              <li>Truy xuất lai lấy 8 đoạn liên quan nhất.</li>
-              <li>Ghép thành ngữ cảnh có số thứ tự [1], [2]…</li>
-              <li>Model trả lời và bắt buộc trích dẫn theo số.</li>
-              <li>Nếu model lỗi, app tự lùi về chế độ trích dẫn trực tiếp.</li>
+              <li>Hybrid retrieval pulls the 8 most relevant passages.</li>
+              <li>They are stitched into context numbered [1], [2]…</li>
+              <li>The model answers and must cite by number.</li>
+              <li>If the model fails, the app falls back to direct citations.</li>
             </ol>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <Badge>trích dẫn bắt buộc</Badge>
-              <Badge>không gửi dữ liệu ngoài ý muốn</Badge>
+              <Badge>citations required</Badge>
+              <Badge>no unintended data sent</Badge>
             </div>
           </Card>
         </div>

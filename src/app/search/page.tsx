@@ -33,9 +33,9 @@ type SearchResponse = {
 };
 
 const MODES = [
-  { id: "hybrid", label: "Lai" },
-  { id: "keyword", label: "Từ khoá" },
-  { id: "semantic", label: "Ngữ nghĩa" },
+  { id: "hybrid", label: "Hybrid" },
+  { id: "keyword", label: "Keyword" },
+  { id: "semantic", label: "Semantic" },
 ] as const;
 
 function scoreBadge(hit: Hit): string {
@@ -76,47 +76,48 @@ export default function SearchPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Tìm kiếm</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Search</h1>
         <p className="text-sm text-muted">
-          Tìm không dấu vẫn ra kết quả (chỉ mục đã bỏ dấu). Chế độ lai kết hợp BM25, trigram và vector khi đã có embedding.
+          Search without diacritics still returns results (the index is diacritic-stripped). Hybrid mode combines BM25, trigram and
+          vectors when embeddings are available.
         </p>
       </header>
 
       <Card>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[16rem] flex-1">
-            <label className="text-xs text-muted">Từ khoá</label>
+            <label className="text-xs text-muted">Keyword</label>
             <div className="mt-1">
-              <Input value={query} onChange={setQuery} placeholder="ví dụ: bao cao quy 3" onEnter={() => void run()} />
+              <Input value={query} onChange={setQuery} placeholder="e.g. q3 report" onEnter={() => void run()} />
             </div>
           </div>
           <div className="w-40">
-            <label className="text-xs text-muted">Nguồn</label>
+            <label className="text-xs text-muted">Source</label>
             <div className="mt-1">
               <Input value={source} onChange={setSource} placeholder="gmail, note…" />
             </div>
           </div>
           <div className="w-40">
-            <label className="text-xs text-muted">Thẻ</label>
+            <label className="text-xs text-muted">Tag</label>
             <div className="mt-1">
-              <Input value={tags} onChange={setTags} placeholder="du-an" />
+              <Input value={tags} onChange={setTags} placeholder="project" />
             </div>
           </div>
           <div className="w-40">
-            <label className="text-xs text-muted">Từ ngày</label>
+            <label className="text-xs text-muted">Since</label>
             <div className="mt-1">
               <Input value={since} onChange={setSince} type="date" />
             </div>
           </div>
           <Button variant="primary" onClick={() => void run()} disabled={loading}>
-            {loading ? "Đang tìm…" : "Tìm"}
+            {loading ? "Searching…" : "Search"}
           </Button>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <Tabs tabs={MODES.map((entry) => ({ id: entry.id, label: entry.label }))} active={mode} onChange={setMode} />
           <span className="text-xs text-muted">
             {mode === "semantic" && result && !result.semanticAvailable
-              ? "Chưa có embedding cho model hiện tại — hãy tạo embedding ở Cài đặt."
+              ? "No embeddings for the current model yet — create embeddings in Settings."
               : ""}
           </span>
         </div>
@@ -128,18 +129,18 @@ export default function SearchPage() {
         <>
           <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
             <span>
-              {result.total} tài liệu khớp · {result.tookMs}ms · chế độ {result.mode}
+              {result.total} matching documents · {result.tookMs}ms · {result.mode} mode
             </span>
-            {result.semanticAvailable ? <Badge tone="good">có embedding</Badge> : <Badge tone="warn">chỉ từ khoá</Badge>}
+            {result.semanticAvailable ? <Badge tone="good">embedded</Badge> : <Badge tone="warn">keyword only</Badge>}
             <Link href={`/chat?q=${encodeURIComponent(result.query)}`} className="underline">
-              Hỏi đáp về kết quả này →
+              Ask about this result →
             </Link>
           </div>
 
           {result.hits.length === 0 ? (
             <EmptyState
-              title="Không tìm thấy kết quả"
-              hint="Thử từ khoá ngắn hơn, bỏ dấu, hoặc nạp thêm dữ liệu ở mục Kết nối / Nhập dữ liệu."
+              title="No results found"
+              hint="Try shorter keywords, drop diacritics, or import more data under Connectors / Import."
             />
           ) : (
             <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
@@ -169,7 +170,7 @@ export default function SearchPage() {
 
               <div className="space-y-4">
                 <Card>
-                  <CardTitle>Phân bố nguồn</CardTitle>
+                  <CardTitle>Source breakdown</CardTitle>
                   <ul className="space-y-1 text-xs">
                     {Object.entries(result.facets.sourceId).slice(0, 12).map(([key, value]) => (
                       <li key={key} className="flex justify-between">
@@ -180,7 +181,7 @@ export default function SearchPage() {
                   </ul>
                 </Card>
                 <Card>
-                  <CardTitle>Thẻ liên quan</CardTitle>
+                  <CardTitle>Related tags</CardTitle>
                   <div className="flex flex-wrap gap-1.5">
                     {Object.entries(result.facets.tags).slice(0, 20).map(([key, value]) => (
                       <Badge key={key}>
@@ -190,10 +191,10 @@ export default function SearchPage() {
                   </div>
                 </Card>
                 <Card>
-                  <CardTitle>Cách tính điểm</CardTitle>
+                  <CardTitle>How scoring works</CardTitle>
                   <p className="text-xs text-muted">
-                    Điểm cuối là hợp nhất RRF của ba bộ truy xuất (BM25 1.0 · trigram 0.45 · vector 1.15), cộng nhỏ cho độ mới và
-                    ghim. Điểm số chỉ có ý nghĩa so sánh trong cùng một truy vấn.
+                    The final score is an RRF fusion of three retrievers (BM25 1.0 · trigram 0.45 · vector 1.15), plus a small bonus
+                    for recency and pinned items. Scores are only meaningful when compared within the same query.
                   </p>
                 </Card>
               </div>
@@ -203,7 +204,7 @@ export default function SearchPage() {
       ) : loading ? (
         <Spinner />
       ) : (
-        <EmptyState title="Nhập từ khoá để tìm" hint="Ví dụ: “cuộc họp tuần trước với khách hàng A” hoặc “spec thanh toán”." />
+        <EmptyState title="Enter keywords to search" hint="For example: &quot;last week's meeting with customer A&quot; or &quot;payments spec&quot;." />
       )}
     </div>
   );

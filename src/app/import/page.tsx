@@ -46,7 +46,7 @@ export default function ImportPage() {
   async function upload(path: string, input: HTMLInputElement | null, endpoint: string) {
     const files = input?.files;
     if (!files || files.length === 0) {
-      setError("Chưa chọn tệp nào.");
+      setError("No files selected.");
       return;
     }
     setBusy(true);
@@ -61,11 +61,11 @@ export default function ImportPage() {
         { method: "POST", body: form },
       );
       if (result.imports) {
-        setMessage(`Đã nhập ${result.imports.length} bộ dữ liệu.`);
-        setDetails(result.imports.map((entry) => `${entry.importer}: +${entry.added ?? 0} mới, ${entry.updated ?? 0} cập nhật, ${entry.skipped ?? 0} bỏ qua, ${entry.failed ?? 0} lỗi`));
+        setMessage(`Imported ${result.imports.length} datasets.`);
+        setDetails(result.imports.map((entry) => `${entry.importer}: +${entry.added ?? 0} added, ${entry.updated ?? 0} updated, ${entry.skipped ?? 0} skipped, ${entry.failed ?? 0} failed`));
       } else {
-        setMessage(`Đã xử lý ${result.total ?? 0} tệp — ${result.created ?? 0} tài liệu mới.`);
-        setDetails((result.results ?? []).map((entry) => `${entry.status} · ${entry.title} · ${entry.chunks} đoạn${entry.error ? ` · ${entry.error}` : ""}`));
+        setMessage(`Processed ${result.total ?? 0} files — ${result.created ?? 0} new documents.`);
+        setDetails((result.results ?? []).map((entry) => `${entry.status} · ${entry.title} · ${entry.chunks} chunks${entry.error ? ` · ${entry.error}` : ""}`));
       }
       if (input) input.value = "";
     } catch (caught) {
@@ -77,7 +77,7 @@ export default function ImportPage() {
 
   async function syncFolder() {
     if (folder.trim().length === 0) {
-      setError("Nhập đường dẫn thư mục tuyệt đối.");
+      setError("Enter an absolute folder path.");
       return;
     }
     setBusy(true);
@@ -89,7 +89,7 @@ export default function ImportPage() {
         { method: "POST", body: JSON.stringify({ root: folder.trim(), force }) },
       );
       setMessage(
-        `Quét ${report.scanned} tệp trong ${report.tookMs}ms: +${report.ingested} mới, ${report.updated} cập nhật, ${report.skipped} bỏ qua, ${report.removed} đã xoá khỏi thư mục, ${report.failed} lỗi.`,
+        `Scanned ${report.scanned} files in ${report.tookMs}ms: +${report.ingested} added, ${report.updated} updated, ${report.skipped} skipped, ${report.removed} deleted from the folder, ${report.failed} failed.`,
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
@@ -108,7 +108,7 @@ export default function ImportPage() {
         method: "POST",
         body: JSON.stringify({ url: url.trim() }),
       });
-      setMessage(`Đã lưu “${result.title}” (${result.chunks} đoạn).`);
+      setMessage(`Saved "${result.title}" (${result.chunks} chunks).`);
       setDetails(result.warnings);
       setUrl("");
     } catch (caught) {
@@ -132,7 +132,7 @@ export default function ImportPage() {
         method: "POST",
         body: JSON.stringify({ text: paste, title: pasteTitle || undefined, tags, sourceKind: "paste" }),
       });
-      setMessage(`Đã lưu ${result.chunks} đoạn vào bộ nhớ.`);
+      setMessage(`Saved ${result.chunks} chunks to memory.`);
       setPaste("");
       setPasteTitle("");
       setPasteTags("");
@@ -146,19 +146,19 @@ export default function ImportPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Nhập dữ liệu</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Import</h1>
         <p className="text-sm text-muted">
-          Nạp tài liệu từ tệp, thư mục Obsidian, liên kết hoặc bản export của dịch vụ khác — không cần kết nối OAuth.
+          Bring in documents from files, an Obsidian vault, links or another service's export — no OAuth needed.
         </p>
       </header>
 
       <Tabs
         tabs={[
-          { id: "files", label: "Tệp" },
-          { id: "folder", label: "Thư mục" },
-          { id: "url", label: "Liên kết" },
-          { id: "paste", label: "Dán văn bản" },
-          { id: "export", label: "Bản export" },
+          { id: "files", label: "Files" },
+          { id: "folder", label: "Folder" },
+          { id: "url", label: "Link" },
+          { id: "paste", label: "Paste text" },
+          { id: "export", label: "Export" },
         ]}
         active={tab}
         onChange={setTab}
@@ -178,44 +178,44 @@ export default function ImportPage() {
 
       {tab === "files" ? (
         <Card>
-          <CardTitle hint="md, txt, pdf, docx, html, csv, json, eml…">Tải tệp lên</CardTitle>
+          <CardTitle hint="md, txt, pdf, docx, html, csv, json, eml…">Upload files</CardTitle>
           <input ref={fileRef} type="file" multiple className="block w-full text-sm" />
           <div className="mt-3 flex items-center gap-2">
             <Button variant="primary" onClick={() => void upload("/api/v1/ingest/file", fileRef.current, "file")} disabled={busy}>
-              {busy ? "Đang xử lý…" : "Nạp vào bộ nhớ"}
+              {busy ? "Processing…" : "Save to memory"}
             </Button>
-            <span className="text-xs text-muted">Tệp gốc được giữ trong thư mục data/files để có thể lập chỉ mục lại.</span>
+            <span className="text-xs text-muted">Original files are kept in the data/files folder so they can be re-indexed.</span>
           </div>
         </Card>
       ) : null}
 
       {tab === "folder" ? (
         <Card>
-          <CardTitle hint="đồng bộ tăng dần theo mtime">Thư mục trên máy</CardTitle>
-          <Input value={folder} onChange={setFolder} placeholder="C:\\Users\\ban\\Documents\\vault" />
+          <CardTitle hint="incremental sync by modified time">Local folder</CardTitle>
+          <Input value={folder} onChange={setFolder} placeholder="C:\\Users\\you\\Documents\\vault" />
           <label className="mt-2 flex items-center gap-2 text-xs text-muted">
             <input type="checkbox" checked={force} onChange={(event) => setForce(event.target.checked)} />
-            Lập chỉ mục lại cả tệp không thay đổi
+            Re-index unchanged files too
           </label>
           <div className="mt-3">
             <Button variant="primary" onClick={() => void syncFolder()} disabled={busy}>
-              {busy ? "Đang quét…" : "Đồng bộ thư mục"}
+              {busy ? "Scanning…" : "Sync folder"}
             </Button>
           </div>
           <p className="mt-2 text-[11px] text-muted">
-            Bỏ qua các thư mục ẩn, node_modules, .git; tệp lớn hơn 32MB bị bỏ qua. Tệp bị xoá khỏi thư mục sẽ được đánh dấu đã xoá
-            trong bộ nhớ.
+            Hidden folders, node_modules and .git are skipped; files larger than 32MB are skipped. Files deleted from the folder are
+            marked as deleted in memory.
           </p>
         </Card>
       ) : null}
 
       {tab === "url" ? (
         <Card>
-          <CardTitle hint="tải trang và trích phần nội dung chính">Liên kết</CardTitle>
-          <Input value={url} onChange={setUrl} placeholder="https://example.com/bai-viet" onEnter={() => void captureUrl()} />
+          <CardTitle hint="fetches the page and extracts the main content">Link</CardTitle>
+          <Input value={url} onChange={setUrl} placeholder="https://example.com/article" onEnter={() => void captureUrl()} />
           <div className="mt-3">
             <Button variant="primary" onClick={() => void captureUrl()} disabled={busy}>
-              {busy ? "Đang tải…" : "Lưu trang này"}
+              {busy ? "Loading…" : "Save this page"}
             </Button>
           </div>
         </Card>
@@ -223,17 +223,17 @@ export default function ImportPage() {
 
       {tab === "paste" ? (
         <Card>
-          <CardTitle>Dán văn bản</CardTitle>
-          <Input value={pasteTitle} onChange={setPasteTitle} placeholder="Tiêu đề (tuỳ chọn)" />
+          <CardTitle>Paste text</CardTitle>
+          <Input value={pasteTitle} onChange={setPasteTitle} placeholder="Title (optional)" />
           <div className="mt-2">
-            <Textarea value={paste} onChange={setPaste} rows={10} placeholder="Dán nội dung cần lưu…" />
+            <Textarea value={paste} onChange={setPaste} rows={10} placeholder="Paste the content you want to save…" />
           </div>
           <div className="mt-2">
-            <Input value={pasteTags} onChange={setPasteTags} placeholder="Thẻ, phân cách bằng dấu phẩy" />
+            <Input value={pasteTags} onChange={setPasteTags} placeholder="Tags, comma-separated" />
           </div>
           <div className="mt-3">
             <Button variant="primary" onClick={() => void savePaste()} disabled={busy}>
-              Lưu
+              Save
             </Button>
           </div>
         </Card>
@@ -241,11 +241,11 @@ export default function ImportPage() {
 
       {tab === "export" ? (
         <Card>
-          <CardTitle hint="không cần OAuth">Bản export của dịch vụ khác</CardTitle>
+          <CardTitle hint="no OAuth needed">Export from another service</CardTitle>
           <input ref={exportRef} type="file" multiple className="block w-full text-sm" />
           <div className="mt-3">
             <Button variant="primary" onClick={() => void upload("/api/v1/ingest/importer", exportRef.current, "importer")} disabled={busy}>
-              {busy ? "Đang nhập…" : "Nhập bản export"}
+              {busy ? "Importing…" : "Import an export"}
             </Button>
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
@@ -256,19 +256,19 @@ export default function ImportPage() {
             ))}
           </div>
           <p className="mt-2 text-[11px] text-muted">
-            Ví dụ: Google Takeout (.mbox), Slack export (.zip), Notion export (.zip), lịch (.ics), email (.eml).
+            Examples: Google Takeout (.mbox), Slack export (.zip), Notion export (.zip), calendar (.ics), email (.eml).
           </p>
         </Card>
       ) : null}
 
       <Card>
-        <CardTitle>Định dạng đã hỗ trợ</CardTitle>
+        <CardTitle>Supported formats</CardTitle>
         {!capabilities ? (
           <Spinner />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="mb-1 text-xs font-medium text-muted">Trích xuất văn bản</p>
+              <p className="mb-1 text-xs font-medium text-muted">Text extraction</p>
               <div className="flex flex-wrap gap-1.5">
                 {capabilities.extractors.map((extractor) => (
                   <Badge key={extractor.id}>
@@ -278,7 +278,7 @@ export default function ImportPage() {
               </div>
             </div>
             <div>
-              <p className="mb-1 text-xs font-medium text-muted">Bộ nhập hàng loạt</p>
+              <p className="mb-1 text-xs font-medium text-muted">Bulk importers</p>
               <div className="flex flex-wrap gap-1.5">
                 {capabilities.importers.map((importer) => (
                   <Badge key={importer.id}>{importer.id}</Badge>

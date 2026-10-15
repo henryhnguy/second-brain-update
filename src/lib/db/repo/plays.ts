@@ -18,54 +18,54 @@ export type BuiltinPlay = {
 export const BUILTIN_PLAYS: BuiltinPlay[] = [
   {
     id: "play_weekly_digest",
-    name: "Tổng hợp tuần",
+    name: "Weekly digest",
     kind: "weekly_digest",
-    description: "Gom mọi thứ đã lưu trong 7 ngày qua thành bản tổng hợp theo chủ đề và nguồn.",
+    description: "Pulls everything saved in the last 7 days into a round-up grouped by topic and source.",
     schedule: "0 18 * * 5",
     params: { days: 7 },
     usesLlm: true,
   },
   {
     id: "play_daily_brief",
-    name: "Bản tin hôm nay",
+    name: "Today's brief",
     kind: "daily_brief",
-    description: "3-6 điểm quan trọng nhất trong ngày kèm nguồn.",
+    description: "The 3-6 most important points of the day, each with its source.",
     schedule: "0 8 * * 1-5",
     params: { days: 1 },
     usesLlm: true,
   },
   {
     id: "play_meeting_brief",
-    name: "Chuẩn bị họp",
+    name: "Meeting brief",
     kind: "meeting_brief",
-    description: "Bối cảnh, trao đổi trước đó và tài liệu liên quan cho một cuộc họp.",
+    description: "Context, earlier exchanges and relevant documents for one meeting.",
     schedule: null,
     params: { topic: "" },
     usesLlm: true,
   },
   {
     id: "play_open_loops",
-    name: "Việc còn dang dở",
+    name: "Open loops",
     kind: "open_loops",
-    description: "Liệt kê deadline, yêu cầu và câu hỏi chưa được xử lý trong 30 ngày qua.",
+    description: "Lists the deadlines, requests and questions still open from the last 30 days.",
     schedule: "0 9 * * 1",
     params: { days: 30 },
     usesLlm: false,
   },
   {
     id: "play_find_file",
-    name: "Tìm tài liệu",
+    name: "Find a document",
     kind: "find_file",
-    description: "Trả lời câu hỏi “để tài liệu đó ở đâu rồi?” bằng tìm kiếm lai.",
+    description: "Answers “where did I put that?” with hybrid search.",
     schedule: null,
     params: { query: "" },
     usesLlm: false,
   },
   {
     id: "play_topic_dossier",
-    name: "Hồ sơ chủ đề",
+    name: "Topic dossier",
     kind: "topic_dossier",
-    description: "Dựng dòng thời gian mọi thông tin về một chủ đề.",
+    description: "Builds a timeline of everything known about one topic.",
     schedule: null,
     params: { topic: "" },
     usesLlm: true,
@@ -122,6 +122,9 @@ export function listPlays(): Play[] {
 }
 
 export function getPlay(id: string): Play | null {
+  // Built-in plays are seeded lazily. Every read path has to rely on them
+  // existing, because the CLI can run a play before anything lists them.
+  seedBuiltinPlays();
   const row = get<Record<string, unknown>>(getDb(), "SELECT * FROM plays WHERE id = ?", [id]);
   return row ? mapPlay(row) : null;
 }

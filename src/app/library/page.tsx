@@ -21,14 +21,14 @@ type DocumentRow = {
 };
 
 const SOURCE_FILTERS = [
-  { id: "", label: "Tất cả" },
-  { id: "note", label: "Ghi chú" },
-  { id: "connector", label: "Kết nối" },
-  { id: "folder", label: "Thư mục" },
-  { id: "upload", label: "Tệp tải lên" },
-  { id: "url", label: "Trang web" },
-  { id: "importer", label: "Bản export" },
-  { id: "paste", label: "Văn bản dán" },
+  { id: "", label: "All" },
+  { id: "note", label: "Notes" },
+  { id: "connector", label: "Connectors" },
+  { id: "folder", label: "Folder" },
+  { id: "upload", label: "Uploaded file" },
+  { id: "url", label: "Web page" },
+  { id: "importer", label: "Export" },
+  { id: "paste", label: "Pasted text" },
 ];
 
 export default function LibraryPage() {
@@ -65,9 +65,9 @@ export default function LibraryPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Thư viện</h1>
+        <h1 className="text-xl font-semibold tracking-tight">Library</h1>
         <p className="text-sm text-muted">
-          Mọi thứ đã được nạp vào bộ nhớ: ghi chú, email, sự kiện lịch, tệp, trang web, bản export.
+          Everything ingested into memory: notes, email, calendar events, files, web pages, exports.
         </p>
       </header>
 
@@ -97,12 +97,12 @@ export default function LibraryPage() {
                 setSourceId(value);
                 setOffset(0);
               }}
-              placeholder="Lọc theo nguồn, ví dụ gmail"
+              placeholder="Filter by source, e.g. gmail"
             />
           </div>
-          <Button onClick={() => void load()}>Làm mới</Button>
+          <Button onClick={() => void load()}>Refresh</Button>
           <span className="text-xs text-muted">
-            {loading ? "Đang tải…" : `${total} tài liệu khớp bộ lọc`}
+            {loading ? "Loading…" : `${total} documents match the filter`}
           </span>
         </div>
       </Card>
@@ -113,11 +113,11 @@ export default function LibraryPage() {
         <Spinner />
       ) : items.length === 0 ? (
         <EmptyState
-          title="Chưa có tài liệu nào"
-          hint="Nạp tệp, đồng bộ thư mục ghi chú hoặc kết nối một dịch vụ để bắt đầu."
+          title="No documents yet"
+          hint="Ingest files, sync a notes folder, or connect a service to get started."
           action={
             <Link href="/import" className="rounded-xl border border-line bg-raised px-3 py-1.5 text-sm hover:border-accent/60">
-              Nhập dữ liệu
+              Import
             </Link>
           }
         />
@@ -132,7 +132,7 @@ export default function LibraryPage() {
                       <Link href={`/library/${doc.id}`} className="line-clamp-1 text-sm font-medium hover:underline">
                         {doc.title}
                       </Link>
-                      {doc.pinned ? <Badge tone="accent">ghim</Badge> : null}
+                      {doc.pinned ? <Badge tone="accent">pinned</Badge> : null}
                     </div>
                     <p className="mt-1 line-clamp-1 text-xs text-muted">
                       {doc.sourceId}
@@ -143,8 +143,8 @@ export default function LibraryPage() {
                   </div>
                   <div className="flex shrink-0 items-center gap-2 text-[11px] text-muted">
                     <Badge>{doc.sourceKind}</Badge>
-                    <span>{doc.chunkCount} đoạn</span>
-                    <span>{doc.tokenCount} token</span>
+                    <span>{doc.chunkCount} chunks</span>
+                    <span>{doc.tokenCount} tokens</span>
                     <span>{(doc.createdAt ?? doc.ingestedAt).slice(0, 10)}</span>
                   </div>
                 </div>
@@ -156,21 +156,21 @@ export default function LibraryPage() {
 
       <div className="flex items-center justify-between">
         <Button disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 40))}>
-          ← Trang trước
+          ← Previous page
         </Button>
         <span className="text-xs text-muted">
           {offset + 1}–{offset + items.length}
         </span>
         <Button disabled={offset + items.length >= total} onClick={() => setOffset(offset + 40)}>
-          Trang sau →
+          Next page →
         </Button>
       </div>
 
       <Card>
-        <CardTitle>Tìm kiếm nâng cao</CardTitle>
+        <CardTitle>Advanced search</CardTitle>
         <p className="text-xs text-muted">
-          Trang <Link href="/search" className="underline">Tìm kiếm</Link> hỗ trợ chế độ lai (từ khoá + ngữ nghĩa), lọc theo ngày,
-          thẻ và xem chi tiết điểm số từng nguồn.{query ? ` Từ khoá hiện tại: ${query}` : ""}
+          The <Link href="/search" className="underline">Search</Link> page supports hybrid mode (keyword + semantic), date and
+          tag filters, and per-source score details.{query ? ` Current query: ${query}` : ""}
         </p>
       </Card>
     </div>

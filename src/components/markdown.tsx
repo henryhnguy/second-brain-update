@@ -50,7 +50,7 @@ function linkCitations(markdown: string, citations: Citation[]): string {
 
 export function CitationList({ citations, compact = false }: { citations: Citation[]; compact?: boolean }) {
   if (citations.length === 0) {
-    return <p className="text-xs text-muted">Chưa có nguồn nào được dùng.</p>;
+    return <p className="text-xs text-muted">No sources used yet.</p>;
   }
   return (
     <ol className="space-y-1.5">
@@ -67,7 +67,7 @@ export function CitationList({ citations, compact = false }: { citations: Citati
 }
 
 export function SourceLink({ citation }: { citation: Citation }) {
-  const label = citation.title || "(không tiêu đề)";
+  const label = citation.title || "(untitled)";
   const suffix = citation.createdAt ? ` · ${citation.createdAt.slice(0, 10)}` : "";
   const inner: ReactNode = (
     <span className="font-medium">
