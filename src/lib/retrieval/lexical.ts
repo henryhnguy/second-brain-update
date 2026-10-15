@@ -60,9 +60,11 @@ export function keywordSearch(
   if (!match) return [];
 
   const { where, params } = documentFilterSql(options.filters, "d");
+  // Title weight > heading weight: a word in the title is a stronger signal
+  // about the document than the same word in a section heading.
   let rows = all<Record<string, unknown>>(
     db,
-    `SELECT ${SELECT_COLUMNS}, bm25(chunks_fts, 1.0, 0.6) AS bm
+    `SELECT ${SELECT_COLUMNS}, bm25(chunks_fts, 1.0, 0.6, 1.4) AS bm
      FROM chunks_fts f
      JOIN chunks c ON c.rowid = f.rowid
      JOIN documents d ON d.id = c.document_id
@@ -76,7 +78,7 @@ export function keywordSearch(
     if (loose) {
       rows = all<Record<string, unknown>>(
         db,
-        `SELECT ${SELECT_COLUMNS}, bm25(chunks_fts, 1.0, 0.6) AS bm
+        `SELECT ${SELECT_COLUMNS}, bm25(chunks_fts, 1.0, 0.6, 1.4) AS bm
          FROM chunks_fts f
          JOIN chunks c ON c.rowid = f.rowid
          JOIN documents d ON d.id = c.document_id

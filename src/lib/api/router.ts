@@ -4,7 +4,7 @@ import { AppError, apiErrorBody, badRequest, notFound, toAppError } from "../cor
 import { createLogger, recentLogs } from "../core/logger";
 import { appUrl, envBool } from "../core/env";
 import { getAiConfig, publicAiConfig, saveAiConfig } from "../ai/config";
-import { checkConnection } from "../ai/provider";
+import { chatConfigured, checkConnection } from "../ai/chat-provider";
 import { backfillEmbeddings, embeddingStatus } from "../ai/embeddings";
 import { answer, streamAnswer } from "../ai/chat";
 import { dbCapabilities, dataPaths, lastMigrationReport } from "../db/connection";
@@ -225,7 +225,7 @@ export const ROUTES: Route[] = [
       });
     },
   },
-  { method: "GET", pattern: "stats", handler: async () => json(buildStats(getAiConfig().configured)) },
+  { method: "GET", pattern: "stats", handler: async () => json(buildStats(chatConfigured())) },
   {
     method: "GET",
     pattern: "search",

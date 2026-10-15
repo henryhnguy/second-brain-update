@@ -27,7 +27,7 @@ onto the same library code.
 | `lib/import` | Bulk importers (mbox, ICS, RFC822, Notion zip, Slack zip) that stream items into `ingestText`. |
 | `lib/connectors` | Provider framework: OAuth plumbing, sealed credential storage, cursor-based sync. |
 | `lib/retrieval` | Lexical (FTS5 BM25), trigram substring scan, semantic (cosine), and the fusion layer. |
-| `lib/ai` | One OpenAI-compatible client, config resolution, prompts. |
+| `lib/ai` | Two chat dialects behind one dispatcher (`chat-provider.ts`), the OpenAI-compatible embedding client, config resolution and prompts. |
 | `lib/plays` | Deterministic digests plus optional model synthesis. |
 | `lib/jobs` | Background worker for ingest, embedding backfill and scheduled syncs. |
 | `lib/db` | Connection, migrations, repositories. The only layer that writes SQL. |
@@ -58,8 +58,9 @@ onto the same library code.
 
 `lib/retrieval/hybrid.ts` fuses three sources into one ranked list:
 
-- **Lexical** — FTS5 `bm25()` over the diacritic-folded chunk text. Queries are folded too, so
-  `bao cao` matches `Báo cáo`. Prefix matching is applied to the last token.
+- **Lexical** — FTS5 `bm25()` over the diacritic-folded chunk text *and* the document title,
+  weighted `1.0` text, `0.6` heading path, `1.4` title. Queries are folded too, so `bao cao`
+  matches `Báo cáo`. Prefix matching is applied to the last token.
 - **Trigram** — a substring scan catches plurals, compounds and typos the tokeniser misses.
 - **Semantic** — cosine similarity over stored embeddings, enabled only when embeddings exist.
 
@@ -95,11 +96,14 @@ ever holds ciphertext, and the API never returns the plaintext.
 
 ## Known limitations
 
-- **Document titles are not in the full-text index.** `chunks_fts` indexes chunk text and heading
-  paths, so a word that appears only in a document's title is not found by search. The fix is to
-  fold the title into the indexed row (a `title_fold` column written at chunk-insert time) and
-  re-index existing rows with `npm run cli -- index`.
-- **One AI code path.** The model layer is OpenAI-compatible only; there is no dedicated Anthropic
-  adapter yet.
+- **Document titles are indexed.** `chunks_fts` and `chunks_trigram` carry a folded-title column,
+  so a word that appears only in a document's title is found. Migrations 3 and 4 rebuild both
+  indexes and fold every stored title with the same normalisation the writers use.
+- **Two chat dialects, one embedding provider.** Chat can go to Anthropic, but embeddings cannot:
+  Anthropic has no embeddings endpoint, so semantic search always needs an OpenAI-compatible
+  embedding service.
+- **The provider selector is not in the UI yet.** Chat routing is configured through
+  `SB_AI_CHAT_PROVIDER`; the dispatcher already reads a sealed `ai.chatProvider` setting, so adding
+  the control to the Settings page is a front-end-only change.
 - **Single-writer SQLite.** The app is built for one person on one machine. Running several
   instances against the same file is not supported.

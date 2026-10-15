@@ -4,6 +4,33 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-10-15
+
+### Added
+
+- **Anthropic chat support** — chat can be routed to the Anthropic Messages API with
+  `SB_AI_CHAT_PROVIDER=anthropic`. The new `lib/ai/anthropic.ts` client handles the wire-format
+  differences (system prompt as a top-level field, required `max_tokens`, content blocks, typed SSE
+  events), and `lib/ai/chat-provider.ts` dispatches between it and the existing OpenAI-compatible
+  client, so no caller has to know which provider is configured. Embeddings stay on the
+  OpenAI-compatible path, because Anthropic publishes no embeddings endpoint.
+- **Searchable document titles** — `chunks_fts` and `chunks_trigram` gained a folded-title column,
+  so a document can be found by a word that appears only in its title. Migrations 3 and 4 rebuild
+  both indexes and fold every stored title; the change is covered by a test that upgrades a
+  database written with the old schema.
+
+### Changed
+
+- Migrations may now carry an `up(database)` step, which runs inside the same transaction, for
+  values that need the runtime's own normalisation rather than hand-rolled SQL.
+- The AI-configured badge and `/api/v1/stats` follow the selected chat provider instead of the
+  OpenAI-compatible configuration alone.
+
+### Removed
+
+- `src/lib/i18n/index.ts` — an unused translation dictionary no module imported.
+- `probe.ts` — a scratch debugging file.
+
 ## [0.1.0] — 2026-10-15
 
 First packaged release: a local-first personal memory system with multi-source capture, hybrid

@@ -17,7 +17,8 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { getAiConfig, publicAiConfig } from "../lib/ai/config";
+import { publicAiConfig } from "../lib/ai/config";
+import { chatConfigured } from "../lib/ai/chat-provider";
 import { backfillEmbeddings, embeddingStatus } from "../lib/ai/embeddings";
 import { answer } from "../lib/ai/chat";
 import { dbCapabilities, dataPaths, lastMigrationReport } from "../lib/db/connection";
@@ -116,7 +117,7 @@ async function main(): Promise<number> {
 
     case "doctor": {
       const capabilities = dbCapabilities();
-      const stats = buildStats(getAiConfig().configured);
+      const stats = buildStats(chatConfigured());
       out({
         capabilities,
         data: dataPaths(),
@@ -129,7 +130,7 @@ async function main(): Promise<number> {
     }
 
     case "stats": {
-      out(buildStats(getAiConfig().configured));
+      out(buildStats(chatConfigured()));
       return 0;
     }
 

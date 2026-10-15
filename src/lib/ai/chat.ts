@@ -10,7 +10,8 @@ import { collectionDocumentIds } from "../db/repo/collections";
 import { retrievePassages, type RetrievalDeps } from "../retrieval/hybrid";
 import type { ChatAnswer, ChatRequest, ChatScope, Citation, SearchFilters } from "../types/domain";
 import { getAiConfig, type AiConfig } from "./config";
-import { chatStream, type ChatMessage } from "./provider";
+import { chatConfigured, chatStream } from "./chat-provider";
+import type { ChatMessage } from "./provider";
 import { RAG_SYSTEM_PROMPT, buildExtractiveAnswer, buildRagUserMessage } from "./prompts";
 
 const logger = createLogger("ai:chat");
@@ -102,7 +103,7 @@ export async function* streamAnswer(request: ChatRequest, deps: ChatDeps = {}): 
 
   yield { type: "citations", citations };
 
-  if (!config.configured) {
+  if (!chatConfigured()) {
     const text = buildExtractiveAnswer(message, citations);
     yield { type: "notice", text: "No model configured — showing citations straight from your memory." };
     yield { type: "delta", text };

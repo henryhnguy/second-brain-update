@@ -2,7 +2,7 @@ import { createLogger } from "../core/logger";
 import { daysAgoIso } from "../core/time";
 import { truncate } from "../core/text";
 import { getAiConfig } from "../ai/config";
-import { chatComplete } from "../ai/provider";
+import { chatComplete, chatConfigured } from "../ai/chat-provider";
 import { buildPlayUserMessage, playInstruction } from "../ai/prompts";
 import { listEvents } from "../db/repo/system";
 import { getPlay, finishPlayRun, listPlays, startPlayRun } from "../db/repo/plays";
@@ -227,7 +227,7 @@ export async function runPlay(
       citations = retrieved.citations;
     }
 
-    if (config.configured && play.usesLlm) {
+    if (chatConfigured() && play.usesLlm) {
       try {
         const result = await chatComplete(
           [

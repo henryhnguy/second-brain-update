@@ -93,6 +93,10 @@ export function deleteChunksFor(documentId: string): void {
 export function writeChunks(documentId: string, chunks: PreparedChunk[]): number {
   const db = getDb();
   const trigram = hasTrigramIndex();
+  // The title is indexed next to the chunk text, so a document can be found by
+  // the name it was given and not only by words inside its body.
+  const titleRow = get<{ title: string }>(db, "SELECT title FROM documents WHERE id = ?", [documentId]);
+  const titleFold = foldForIndex(titleRow?.title ?? "");
   let written = 0;
 
   for (const [index, chunk] of chunks.entries()) {
@@ -118,13 +122,14 @@ export function writeChunks(documentId: string, chunks: PreparedChunk[]): number
       ],
     );
     const rowid = result.lastInsertRowid;
-    run(db, "INSERT INTO chunks_fts (rowid, text_fold, heading_fold) VALUES (?, ?, ?)", [
+    run(db, "INSERT INTO chunks_fts (rowid, text_fold, heading_fold, title_fold) VALUES (?, ?, ?, ?)", [
       rowid,
       folded,
       headingFold ?? "",
+      titleFold,
     ]);
     if (trigram) {
-      run(db, "INSERT INTO chunks_trigram (rowid, text_fold) VALUES (?, ?)", [rowid, folded]);
+      run(db, "INSERT INTO chunks_trigram (rowid, text_fold, title_fold) VALUES (?, ?, ?)", [rowid, folded, titleFold]);
     }
     written += 1;
   }

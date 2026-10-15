@@ -14,6 +14,12 @@ export type Migration = {
   statements: string[];
   /** Migration is skipped (and marked) when the capability is missing. */
   requires?: Capability;
+  /**
+   * Optional JavaScript step, run inside the same transaction. A migration that
+   * must derive values with the runtime's own normalisation (folding, hashing)
+   * uses this instead of hand-rolled SQL.
+   */
+  up?: (database: DatabaseSync) => void;
 };
 
 export type MigrationReport = {
@@ -67,10 +73,11 @@ export function applyMigrations(
       continue;
     }
 
-    const checksum = sha256Hex(migration.statements.join("\n"));
+    const checksum = sha256Hex([migration.statements.join("\n"), migration.up ? String(migration.up) : ""].join("\n"));
     exec(database, "BEGIN");
     try {
       for (const statement of migration.statements) exec(database, statement);
+      migration.up?.(database);
       run(
         database,
         `INSERT INTO schema_migrations (id, name, status, checksum, applied_at) VALUES (?, ?, 'applied', ?, ?)

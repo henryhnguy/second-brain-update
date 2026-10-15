@@ -42,6 +42,19 @@ describe("ingest → index → search", () => {
     expect(response.tookMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("finds a document by a word that only appears in its title", async () => {
+    ingestText({
+      text: "Keep the enterprise tier at 40 USD per seat.",
+      title: "Pricing decision",
+      sourceKind: "paste",
+      sourceId: "paste",
+    });
+
+    const response = await search({ query: "pricing", mode: "hybrid", limit: 5 });
+    expect(response.hits.length).toBeGreaterThan(0);
+    expect(response.hits[0]?.title).toBe("Pricing decision");
+  });
+
   it("is idempotent for unchanged content and re-indexes when the text changes", () => {
     const first = ingestText({
       text: "Nội dung ban đầu của tài liệu.",
