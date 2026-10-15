@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { CitationList, Markdown } from "@/components/markdown";
-import { Badge, Button, Card, CardTitle, EmptyState, Notice, Textarea, api } from "@/components/ui";
+import { Badge, Button, Card, CardTitle, EmptyState, Notice, Spinner, Textarea, api } from "@/components/ui";
 import type { Citation } from "@/lib/types/domain";
 
 type Conversation = { id: string; title: string; updatedAt: string; messageCount?: number };
@@ -22,7 +22,20 @@ type ScopeMode = "all" | "notes";
 
 const EXISTING_KEY = "sb-chat-conversation";
 
+/**
+ * Reading the `?q=` parameter opts the route into client-side rendering, which
+ * Next requires to sit behind a Suspense boundary: without one, the production
+ * build fails while prerendering `/chat` (it never shows up in `next dev`).
+ */
 export default function ChatPage() {
+  return (
+    <Suspense fallback={<Spinner label="Loading…" />}>
+      <ChatScreen />
+    </Suspense>
+  );
+}
+
+function ChatScreen() {
   const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);

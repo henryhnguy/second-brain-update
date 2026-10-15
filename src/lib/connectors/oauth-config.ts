@@ -125,14 +125,11 @@ export async function completeOAuth(input: CompleteOAuthInput): Promise<OAuthTok
   const app = getOAuthApp(input.provider);
   if (!app) throw new AppError("bad_request", `Missing OAuth client credentials for ${input.provider.id}.`);
 
-  const exchange = await exchangeCode({
-    oauth: input.provider.auth.oauth,
-    clientId: app.clientId,
-    clientSecret: app.clientSecret,
+  const exchange = await exchangeCode(input.fetchImpl ?? fetch, input.provider.auth.oauth, {
+    ...app,
     code: input.code,
     redirectUri: input.redirectUri,
     codeVerifier: input.verifier,
-    ...(input.fetchImpl ? { fetchImpl: input.fetchImpl } : {}),
   });
 
   return {
@@ -170,12 +167,9 @@ export async function ensureFreshToken(
   const app = getOAuthApp(provider);
   if (!app) throw new AppError("bad_request", `Missing OAuth client credentials to refresh ${provider.label}.`);
 
-  const refreshed = await refreshAccessToken({
-    oauth: provider.auth.oauth,
-    clientId: app.clientId,
-    clientSecret: app.clientSecret,
+  const refreshed = await refreshAccessToken(options.fetchImpl ?? fetch, provider.auth.oauth, {
+    ...app,
     refreshToken: tokens.refreshToken,
-    ...(options.fetchImpl ? { fetchImpl: options.fetchImpl } : {}),
   });
   const merged: OAuthTokens = {
     accessToken: refreshed.accessToken,

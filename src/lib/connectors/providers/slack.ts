@@ -97,6 +97,9 @@ type SlackEnvelope = { ok?: boolean; error?: string };
 
 type SlackChannel = { id?: string; name?: string; is_private?: boolean; is_member?: boolean };
 
+/** A channel that survived the `id` filter, so `id` is a real string from here on. */
+type SlackChannelRef = SlackChannel & { id: string };
+
 type SlackMessage = {
   ts?: string;
   thread_ts?: string;
@@ -249,7 +252,7 @@ async function syncPage(ctx: SyncContext): Promise<SyncPage> {
 }
 
 /** All visible conversations, narrowed by `ctx.config.channels` when set. */
-async function resolveChannels(ctx: SyncContext): Promise<SlackChannel[]> {
+async function resolveChannels(ctx: SyncContext): Promise<SlackChannelRef[]> {
   const body = new URLSearchParams({
     limit: String(CHANNEL_PAGE_LIMIT),
     exclude_archived: "true",
@@ -277,7 +280,7 @@ async function resolveChannels(ctx: SyncContext): Promise<SlackChannel[]> {
 
   const channels = result.pages
     .flatMap((page) => page.channels ?? [])
-    .filter((channel): channel is SlackChannel & { id: string } => typeof channel.id === "string");
+    .filter((channel): channel is SlackChannelRef => typeof channel.id === "string");
   const wanted = configList(ctx, "channels");
   if (wanted.length === 0) return channels;
   return channels.filter((channel) => matchesChannel(channel, wanted));
@@ -352,7 +355,7 @@ function slackError(method: string, code: string | undefined): AppError {
   return new AppError("upstream_error", `Slack ${method} failed: ${reason}`, { details });
 }
 
-function messageToDoc(ctx: SyncContext, channel: SlackChannel & { id: string }, message: SlackMessage, parts: DocParts): ConnectorDoc {
+function messageToDoc(ctx: SyncContext, channel: SlackChannelRef, message: SlackMessage, parts: DocParts): ConnectorDoc {
   const ts = firstNonEmpty(message.ts) ?? "";
   const createdAt = slackTsToIso(ts);
   return {

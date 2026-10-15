@@ -29,6 +29,16 @@ All notable changes to this project are documented here. The format follows
   healthy, which is why only running the server surfaced it. `adm-zip` is now loaded on demand the
   way `mammoth` and `pdfjs-dist` already were, and the server compilations leave Node built-ins and
   those three parsers as runtime requires.
+- **The production build failed on `/chat`.** The page reads its `?q=` parameter with
+  `useSearchParams()`, which opts the route into client-side rendering; Next requires that to sit
+  behind a `Suspense` boundary. It never shows up in `next dev` or in the test suite, and it stayed
+  hidden behind the type errors below, which stopped the build before prerendering ran.
+- **Connector OAuth call sites now match the helpers they call.** Both call sites passed a single
+  object to `exchangeCode` / `refreshAccessToken`, which take `(fetchImpl, oauth, params)`; they now
+  spread the `OAuthApp` the values came from instead of repeating its fields.
+- **The Slack provider names the narrowed channel type** its own filter produces, which the widened
+  return type of `resolveChannels` had been cancelling at three call sites. With this,
+  `npm run typecheck` is clean for the first time in this work: 11 errors at the start, 0 now.
 
 ### Changed
 
