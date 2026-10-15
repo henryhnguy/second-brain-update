@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sb-canvas: 250 250 252;
+  --sb-surface: 255 255 255;
+  --sb-raised: 244 245 249;
+  --sb-line: 226 229 238;
+  --sb-ink: 24 26 33;
+  --sb-muted: 104 112 129;
+  --sb-accent: 79 70 229;
+  --sb-accent-soft: 238 238 255;
+  --sb-warn: 190 98 14;
+  --sb-good: 17 128 90;
+  --sb-font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+  --sb-font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+[data-theme="dark"] {
+  --sb-canvas: 13 15 21;
+  --sb-surface: 20 22 30;
+  --sb-raised: 27 30 41;
+  --sb-line: 42 46 60;
+  --sb-ink: 232 234 242;
+  --sb-muted: 146 153 175;
+  --sb-accent: 137 138 255;
+  --sb-accent-soft: 39 39 78;
+  --sb-warn: 235 165 78;
+  --sb-good: 78 214 160;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: rgb(var(--sb-canvas));
+  color: rgb(var(--sb-ink));
+  font-family: var(--sb-font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(var(--sb-accent) / 0.25);
+}
+
+/* Thin scrollbars so dense knowledge views stay calm. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--sb-line)) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--sb-line));
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.sb-prose {
+  line-height: 1.7;
+}
+
+.sb-prose h1,
+.sb-prose h2,
+.sb-prose h3 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 1.4em 0 0.5em;
+}
+
+.sb-prose h1 {
+  font-size: 1.5rem;
+}
+
+.sb-prose h2 {
+  font-size: 1.25rem;
+}
+
+.sb-prose h3 {
+  font-size: 1.05rem;
+}
+
+.sb-prose p,
+.sb-prose ul,
+.sb-prose ol,
+.sb-prose blockquote,
+.sb-prose pre,
+.sb-prose table {
+  margin: 0.7em 0;
+}
+
+.sb-prose ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+
+.sb-prose ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+
+.sb-prose blockquote {
+  border-left: 3px solid rgb(var(--sb-accent) / 0.5);
+  padding-left: 0.9rem;
+  color: rgb(var(--sb-muted));
+}
+
+.sb-prose code {
+  font-family: var(--sb-font-mono);
+  font-size: 0.85em;
+  background: rgb(var(--sb-raised));
+  padding: 0.12em 0.35em;
+  border-radius: 0.35rem;
+}
+
+.sb-prose pre {
+  background: rgb(var(--sb-raised));
+  border: 1px solid rgb(var(--sb-line));
+  border-radius: 0.75rem;
+  padding: 0.9rem;
+  overflow-x: auto;
+}
+
+.sb-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.sb-prose a {
+  color: rgb(var(--sb-accent));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sb-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.sb-prose th,
+.sb-prose td {
+  border: 1px solid rgb(var(--sb-line));
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+}
+
+.sb-prose mark {
+  background: rgb(var(--sb-accent) / 0.22);
+  border-radius: 0.25rem;
+  padding: 0 0.15rem;
+}

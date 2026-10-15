@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+next-env.d.ts
+
+# Local data: SQLite database, uploaded blobs and the encryption key.
+# Never commit this directory — it holds your personal memory and its keys.
+data/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test / tooling caches
+coverage/
+.vitest/
+.eslintcache
+
+# Editor and OS noise
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
