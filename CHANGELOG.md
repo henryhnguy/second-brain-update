@@ -18,6 +18,12 @@ All notable changes to this project are documented here. The format follows
   so a document can be found by a word that appears only in its title. Migrations 3 and 4 rebuild
   both indexes and fold every stored title; the change is covered by a test that upgrades a
   database written with the old schema.
+- **Provider presets for the model configuration** — the AI card in Settings can fill in the
+  endpoint for OpenAI, OpenRouter, Google Gemini, Ollama, LM Studio or a custom gateway, and says
+  which model list to take the ids from. OpenRouter and Gemini both serve chat *and* embeddings
+  through the OpenAI-compatible protocol (`https://openrouter.ai/api/v1` and
+  `https://generativelanguage.googleapis.com/v1beta/openai/`), so neither needs an adapter of its
+  own. The selector derives the active preset from the saved base URL, so no new setting is stored.
 
 ### Fixed
 

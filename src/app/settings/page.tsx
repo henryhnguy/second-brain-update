@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Badge, Button, Card, CardTitle, Input, KeyValue, Notice, Spinner, Tabs, Textarea, api } from "@/components/ui";
 
+import { AI_PRESETS, presetForBaseUrl, type AiPresetId } from "@/lib/ai/presets";
+
 type AiConfig = {
   mode: "auto" | "openai_compatible" | "off";
   baseUrl: string;
@@ -72,6 +74,21 @@ export default function SettingsPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  /** The preset the current base URL belongs to, so the selector shows where you are. */
+  const activePreset = ai ? AI_PRESETS.find((preset) => preset.id === presetForBaseUrl(ai.baseUrl)) ?? null : null;
+
+  /** Presets pre-fill the endpoint, plus a model id where the provider documents one. */
+  function applyPreset(id: AiPresetId) {
+    const preset = AI_PRESETS.find((entry) => entry.id === id);
+    if (!preset || !ai) return;
+    setAi({
+      ...ai,
+      ...(preset.baseUrl.length > 0 ? { baseUrl: preset.baseUrl } : {}),
+      ...(preset.chatModel ? { chatModel: preset.chatModel } : {}),
+      ...(preset.embedModel ? { embedModel: preset.embedModel } : {}),
+    });
+  }
 
   async function saveAi(patch: Partial<AiConfig> & { apiKey?: string }) {
     setBusy(true);
@@ -175,6 +192,33 @@ export default function SettingsPage() {
               <code className="rounded bg-raised px-1">http://localhost:11434/v1</code> (không cần API key).
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <label className="text-xs text-muted sm:col-span-2">
+                Provider
+                <select
+                  value={presetForBaseUrl(ai.baseUrl)}
+                  onChange={(event) => applyPreset(event.target.value as AiPresetId)}
+                  className="mt-1 w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm"
+                >
+                  {AI_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.label}
+                    </option>
+                  ))}
+                </select>
+                {activePreset ? (
+                  <span className="mt-1 block text-[11px] text-muted">
+                    {activePreset.note}
+                    {activePreset.modelsUrl ? (
+                      <>
+                        {" "}
+                        <a href={activePreset.modelsUrl} target="_blank" rel="noreferrer" className="underline">
+                          Model list
+                        </a>
+                      </>
+                    ) : null}
+                  </span>
+                ) : null}
+              </label>
               <label className="text-xs text-muted">
                 Chế độ
                 <select
