@@ -19,6 +19,17 @@ All notable changes to this project are documented here. The format follows
   both indexes and fold every stored title; the change is covered by a test that upgrades a
   database written with the old schema.
 
+### Fixed
+
+- **The development server answered every request with a 500.** Next compiles
+  `instrumentation.ts` for a target without the Node presets, so the bootstrap's dependency graph
+  — `node:crypto` through `core/ids.ts`, `node:fs` and `node:sqlite` through the database, and the
+  CommonJS `adm-zip` parser through the importer registry — could not be resolved there. An
+  unresolved instrumentation bundle takes the whole server down while the process still looks
+  healthy, which is why only running the server surfaced it. `adm-zip` is now loaded on demand the
+  way `mammoth` and `pdfjs-dist` already were, and the server compilations leave Node built-ins and
+  those three parsers as runtime requires.
+
 ### Changed
 
 - Migrations may now carry an `up(database)` step, which runs inside the same transaction, for

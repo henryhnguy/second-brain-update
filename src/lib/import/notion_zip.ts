@@ -6,8 +6,8 @@
  * the title) and each `.csv` file becomes one item holding the raw table text.
  */
 
-import AdmZip from "adm-zip";
 import { decodeTextBytes, firstHeading, extensionOf } from "../extract/text";
+import { loadAdmZip } from "./adm-zip";
 import type { ImportedItem, Importer, ImporterInput } from "./types";
 
 const SUPPORTED = new Set([".md", ".markdown", ".csv"]);
@@ -40,7 +40,8 @@ export const notionZipImporter: Importer = {
   description: "Notion workspace export: markdown pages and CSV database files.",
 
   async *parse(input: ImporterInput): AsyncGenerator<ImportedItem, void, unknown> {
-    const zip = new AdmZip(Buffer.from(input.bytes));
+    const Zip = await loadAdmZip();
+    const zip = new Zip(Buffer.from(input.bytes));
     const limit = input.limit ?? Number.POSITIVE_INFINITY;
     let produced = 0;
 

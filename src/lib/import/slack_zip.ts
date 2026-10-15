@@ -6,8 +6,8 @@
  * inside a thread — becomes one item, so a thread can be read on its own.
  */
 
-import AdmZip from "adm-zip";
 import { toIso } from "../core/time";
+import { loadAdmZip, type ZipEntry } from "./adm-zip";
 import type { ImportedItem, Importer, ImporterInput } from "./types";
 
 const DAY_FILE = /^\d{4}-\d{2}-\d{2}$/;
@@ -86,7 +86,7 @@ type DayFile = {
   path: string;
   channel: string;
   date: string;
-  entry: ReturnType<AdmZip["getEntries"]>[number];
+  entry: ZipEntry;
 };
 
 /** `general/2024-01-02.json` or `export/general/2024-01-02.json`. */
@@ -106,7 +106,8 @@ export const slackZipImporter: Importer = {
   description: "Slack workspace export: channels, day files, threads and user names.",
 
   async *parse(input: ImporterInput): AsyncGenerator<ImportedItem, void, unknown> {
-    const zip = new AdmZip(Buffer.from(input.bytes));
+    const Zip = await loadAdmZip();
+    const zip = new Zip(Buffer.from(input.bytes));
     const entries = zip.getEntries();
     const limit = input.limit ?? Number.POSITIVE_INFINITY;
 
