@@ -24,6 +24,15 @@ All notable changes to this project are documented here. The format follows
   through the OpenAI-compatible protocol (`https://openrouter.ai/api/v1` and
   `https://generativelanguage.googleapis.com/v1beta/openai/`), so neither needs an adapter of its
   own. The selector derives the active preset from the saved base URL, so no new setting is stored.
+- **Container and Space deployment** — a multi-stage `Dockerfile` built on Next's standalone
+  output and listening on 7860, with a `.dockerignore` that keeps `.env` and `data/` out of the
+  build context; `scripts/deploy-huggingface.py`, which stages the repository's tracked files only,
+  writes the Space's README header and uploads it; and `docs/huggingface.md`, which records the
+  three constraints that decide whether a Space is the right host. Two caveats are deliberate and
+  worth repeating: the image has **not** been built locally (no Docker on this machine — the
+  runtime path it uses was verified directly instead), and the `hf` CLI path documented in
+  `docs/huggingface.md` does not run under this machine's bundled Python, which ships without the
+  `venv` module; the script and the GitHub-linked Space both avoid the CLI entirely.
 
 ### Fixed
 
