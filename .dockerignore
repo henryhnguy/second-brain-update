@@ -1,0 +1,30 @@
+# Keep the build context small — and keep secrets and personal data out of the
+# image. `.env` and `data/` must never be baked into a layer: the first holds
+# your API keys, the second holds your whole memory.
+
+node_modules
+.next
+out
+
+.git
+.gitignore
+.gitattributes
+
+# Secrets and personal data
+.env
+.env.*
+!.env.example
+data
+
+# Local artefacts
+*.log
+coverage
+.vitest
+tsconfig.tsbuildinfo
+next-env.d.ts
+.vscode
+.idea
+
+# Deployment files themselves
+Dockerfile
+.dockerignore
