@@ -27,6 +27,7 @@ const NAV = [
   { href: "/timeline", label: "Timeline", icon: "≡" },
   { href: "/graph", label: "Knowledge graph", icon: "◈" },
   { href: "/settings", label: "Settings", icon: "⚒" },
+  { href: "/about", label: "About", icon: "ⓘ" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {

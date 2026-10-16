@@ -33,6 +33,16 @@ All notable changes to this project are documented here. The format follows
   runtime path it uses was verified directly instead), and the `hf` CLI path documented in
   `docs/huggingface.md` does not run under this machine's bundled Python, which ships without the
   `venv` module; the script and the GitHub-linked Space both avoid the CLI entirely.
+- **Google Drive connector** — read-only OAuth over `files.list`, shared drives included. Google
+  Docs, Sheets and Slides are exported as text, files the app can decode (`text/*`, JSON) are
+  downloaded as is, and everything else is counted and skipped rather than guessed at. The first
+  sync walks the drive; later ones add `modifiedTime > <previous sync>` so a delta run stays small,
+  and the page token is stored so an interrupted listing resumes. `about.get` names the account in
+  the connector list. Covered by tests that drive the provider with a mocked fetch, including a
+  file that cannot be exported and a failing listing.
+- **An About page** — `/about`, reachable from the sidebar, describing what the app does: capture,
+  retrieval, answering, automations, the graph, where the data lives and what leaves the machine.
+  Each automation is marked with whether it needs a model, because several of them do not.
 
 ### Fixed
 

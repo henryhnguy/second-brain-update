@@ -10,6 +10,7 @@
 
 import { gmailProvider } from "./providers/gmail";
 import { googleCalendarProvider } from "./providers/google_calendar";
+import { googleDriveProvider } from "./providers/google_drive";
 import { notionProvider } from "./providers/notion";
 import { outlookMailProvider } from "./providers/outlook_mail";
 import { slackProvider } from "./providers/slack";
@@ -23,6 +24,7 @@ export type { ConnectorAuth, ConnectorDoc, HttpFetch, Provider, SyncContext, Syn
 export const BUILT_IN_PROVIDERS: readonly Provider[] = [
   gmailProvider,
   googleCalendarProvider,
+  googleDriveProvider,
   outlookMailProvider,
   slackProvider,
   notionProvider,

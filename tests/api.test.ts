@@ -127,9 +127,10 @@ describe("api router", () => {
   it("lists the connector catalogue and the enabled extractors", async () => {
     const connectors = await call("GET", "connectors");
     const providers = (connectors.body as { providers: { id: string; authKind: string }[] }).providers;
-    expect(providers.map((provider) => provider.id)).toEqual(["gmail", "google_calendar", "outlook_mail", "slack", "notion"]);
+    expect(providers.map((provider) => provider.id)).toEqual(["gmail", "google_calendar", "google_drive", "outlook_mail", "slack", "notion"]);
     expect(providers.find((provider) => provider.id === "notion")?.authKind).toBe("token");
     expect(providers.find((provider) => provider.id === "gmail")?.authKind).toBe("oauth2");
+    expect(providers.find((provider) => provider.id === "google_drive")?.authKind).toBe("oauth2");
 
     const capabilities = await call("GET", "capabilities");
     const payload = capabilities.body as { extractors: { id: string; extensions: string[] }[]; importers: { id: string }[] };
