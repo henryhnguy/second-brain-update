@@ -5,6 +5,7 @@ import { createLogger, recentLogs } from "../core/logger";
 import { appUrl, envBool } from "../core/env";
 import { getAiConfig, publicAiConfig, saveAiConfig } from "../ai/config";
 import { chatConfigured, checkConnection } from "../ai/chat-provider";
+import { listFreeModels } from "../ai/openrouter";
 import { backfillEmbeddings, embeddingStatus } from "../ai/embeddings";
 import { answer, streamAnswer } from "../ai/chat";
 import { dbCapabilities, dataPaths, lastMigrationReport } from "../db/connection";
@@ -533,6 +534,14 @@ export const ROUTES: Route[] = [
           authKind: provider.auth.kind,
         })),
       });
+    },
+  },
+  {
+    method: "GET",
+    pattern: "ai/openrouter/models",
+    handler: async () => {
+      const result = await listFreeModels();
+      return json({ models: result.models, fetchedAt: result.fetchedAt });
     },
   },
   {

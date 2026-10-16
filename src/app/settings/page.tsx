@@ -6,6 +6,8 @@ import { Badge, Button, Card, CardTitle, Input, KeyValue, Notice, Spinner, Tabs,
 
 import { AI_PRESETS, presetForBaseUrl, type AiPresetId } from "@/lib/ai/presets";
 
+import type { FreeModel } from "@/lib/ai/openrouter";
+
 type AiConfig = {
   mode: "auto" | "openai_compatible" | "off";
   baseUrl: string;
@@ -77,6 +79,26 @@ export default function SettingsPage() {
 
   /** The preset the current base URL belongs to, so the selector shows where you are. */
   const activePreset = ai ? AI_PRESETS.find((preset) => preset.id === presetForBaseUrl(ai.baseUrl)) ?? null : null;
+
+  /** Free OpenRouter models, loaded on demand from the provider catalogue. */
+  const [freeModels, setFreeModels] = useState<FreeModel[] | null>(null);
+
+  const loadFreeModels = useCallback(async () => {
+    try {
+      const result = await api<{ models: FreeModel[] }>("/api/v1/ai/openrouter/models");
+      setFreeModels(result.models);
+    } catch {
+      setFreeModels([]);
+    }
+  }, []);
+
+  // Loaded the first time the OpenRouter preset is active; the list is cached
+  // server-side, so refreshing is cheap but not automatic.
+  useEffect(() => {
+    if (activePreset?.id !== "openrouter" || freeModels !== null) return;
+    void loadFreeModels();
+  }, [activePreset?.id, freeModels, loadFreeModels]);
+
 
   /** Presets pre-fill the endpoint, plus a model id where the provider documents one. */
   function applyPreset(id: AiPresetId) {
@@ -249,6 +271,32 @@ export default function SettingsPage() {
                   <Input value={ai.chatModel} onChange={(value) => setAi({ ...ai, chatModel: value })} />
                 </div>
               </label>
+              {activePreset?.id === "openrouter" ? (
+                <label className="text-xs text-muted sm:col-span-2">
+                  Free models on OpenRouter
+                  <select
+                    value={freeModels?.some((model) => model.id === ai.chatModel) ? ai.chatModel : ""}
+                    onChange={(event) => {
+                      const picked = event.target.value;
+                      if (picked.length > 0) setAi({ ...ai, chatModel: picked });
+                    }}
+                    className="mt-1 w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm"
+                  >
+                    <option value="">Keep the model typed above</option>
+                    {(freeModels ?? []).map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="mt-1 block text-[11px] text-muted">
+                    {freeModels === null ? "Loading the catalogue…" : `${freeModels.length} models that cost nothing`}{" "}
+                    <button type="button" className="underline" onClick={() => void loadFreeModels()}>
+                      Refresh
+                    </button>
+                  </span>
+                </label>
+              ) : null}
               <label className="text-xs text-muted">
                 Model embedding
                 <div className="mt-1">
