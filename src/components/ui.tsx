@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { isSubmitComboKey, isSubmitKey } from "@/lib/core/keys";
+
 /**
  * Minimal UI kit shared by every screen. Deliberately hand-rolled: no component
  * library means no version churn for a long-lived personal tool.
@@ -84,7 +86,7 @@ export function Input({
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={(event) => {
-        if (event.key === "Enter" && onEnter) onEnter();
+        if (onEnter && isSubmitKey(event)) onEnter();
       }}
       className={`w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm outline-none placeholder:text-muted focus:border-accent/70 ${className}`}
     />
@@ -97,12 +99,18 @@ export function Textarea({
   placeholder,
   rows = 3,
   className = "",
+  onEnter,
+  onSubmitCombo,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   rows?: number;
   className?: string;
+  /** Enter submits; Shift+Enter and IME composition do not — see lib/core/keys. */
+  onEnter?: () => void;
+  /** Ctrl/⌘+Enter submits; a bare Enter still types a newline. */
+  onSubmitCombo?: () => void;
 }) {
   return (
     <textarea
@@ -110,6 +118,10 @@ export function Textarea({
       rows={rows}
       placeholder={placeholder}
       onChange={(event) => onChange(event.target.value)}
+      onKeyDown={(event) => {
+        if (onEnter && isSubmitKey(event)) onEnter();
+        if (onSubmitCombo && isSubmitComboKey(event)) onSubmitCombo();
+      }}
       className={`w-full resize-y rounded-xl border border-line bg-raised px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted focus:border-accent/70 ${className}`}
     />
   );

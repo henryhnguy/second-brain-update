@@ -67,7 +67,8 @@ export default function DashboardPage() {
   }, [load]);
 
   async function submitCapture() {
-    if (capture.trim().length === 0) return;
+    // Same guard as the chat composer: nothing to save, or a save already running.
+    if (capture.trim().length === 0 || busy) return;
     setBusy(true);
     setMessage(null);
     try {
@@ -119,6 +120,7 @@ export default function DashboardPage() {
             value={capture}
             onChange={setCapture}
             rows={4}
+            onSubmitCombo={() => void submitCapture()}
             placeholder="Write a note, paste content or a link to save…"
           />
         </div>

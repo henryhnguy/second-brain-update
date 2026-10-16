@@ -278,6 +278,7 @@ function ChatScreen() {
                 value={input}
                 onChange={setInput}
                 rows={2}
+                onEnter={() => void send()}
                 placeholder="Ask about emails, notes, calendar, documents… (Enter to send, Shift+Enter for a new line)"
               />
               <Button variant="primary" onClick={() => void send()} disabled={pending}>
