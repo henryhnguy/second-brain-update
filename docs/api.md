@@ -83,6 +83,15 @@ Codes include `bad_request`, `unauthorized`, `not_found`, `conflict`, `upstream_
 | `POST` | `/conversations/clear` | Delete every conversation |
 | `GET` | `/messages` | Recent messages across conversations |
 
+### Curator
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/curator/index` | Memory map: shelves by source, totals and coverage ratios |
+| `GET` | `/curator/health` | Hygiene report; `days` sets the stale threshold (30–3650, default 180) |
+| `GET` | `/curator/templates` | The five distillation templates |
+| `POST` | `/curator/distill` | `{ documentId, template?, lang?, save?, useLlm? }` → one-pager plus the saved note id |
+
 ### Connectors, plays, jobs and settings
 
 | Method | Path | Notes |
@@ -118,6 +127,13 @@ curl -s localhost:4173/api/v1/chat \
 # A play, with no model configured
 curl -s -X POST localhost:4173/api/v1/plays/play_weekly_digest/run \
   -H 'content-type: application/json' -d '{"params":{"days":7}}'
+
+# Curate: map, distil one document, then review
+curl -s localhost:4173/api/v1/curator/index
+curl -s -X POST localhost:4173/api/v1/curator/distill \
+  -H 'content-type: application/json' \
+  -d '{"documentId":"doc_…","template":"guideline","lang":"vi"}'
+curl -s "localhost:4173/api/v1/curator/health?days=180"
 ```
 
 With `SB_API_REQUIRE_TOKEN=1`, add `-H "Authorization: Bearer <token>"` to every call.

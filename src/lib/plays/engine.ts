@@ -4,6 +4,7 @@ import { truncate } from "../core/text";
 import { getAiConfig } from "../ai/config";
 import { chatComplete, chatConfigured } from "../ai/chat-provider";
 import { buildPlayUserMessage, playInstruction } from "../ai/prompts";
+import { buildHealthReport, renderReviewMarkdown } from "../curator";
 import { listEvents } from "../db/repo/system";
 import { getPlay, finishPlayRun, listPlays, startPlayRun } from "../db/repo/plays";
 import { listDocuments, documentChunks, countDocuments } from "../db/repo/documents";
@@ -208,6 +209,33 @@ export async function runPlay(
   const config = getAiConfig();
 
   try {
+    if (play.kind === "brain_review") {
+      // The hygiene report is deterministic on purpose: it is a checklist, not prose.
+      const report = buildHealthReport({ days: Number(mergedParams.days ?? 180) });
+      const output = renderReviewMarkdown(report, mergedParams.lang === "vi" ? "vi" : "en");
+      const usage = { mode: "deterministic" };
+      finishPlayRun(runId, { status: "ok", output, citations: [], usedLlm: false, usage });
+      return {
+        run: {
+          id: runId,
+          playId: play.id,
+          playName: play.name,
+          startedAt: nowIsoFallback(),
+          finishedAt: nowIsoFallback(),
+          status: "ok" as const,
+          params: mergedParams,
+          output,
+          citations: [],
+          usedLlm: false,
+          error: null,
+          usage,
+        },
+        citations: [],
+        usedLlm: false,
+        output,
+      };
+    }
+
     const data = await gatherData(play, mergedParams, deps);
     const deterministic = buildDigestMarkdown(play, data);
     let output = deterministic;

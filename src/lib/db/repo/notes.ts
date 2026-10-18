@@ -19,6 +19,8 @@ export type CreateNoteInput = {
   markdown?: string;
   tags?: string[];
   pinned?: boolean;
+  /** Extra document metadata, e.g. `{ kind: "summary", sourceDocumentId }`. */
+  meta?: Record<string, unknown>;
 };
 
 export type UpdateNotePatch = {
@@ -129,7 +131,7 @@ export function createNote(input: CreateNoteInput = {}): Note {
     title,
     text: markdown,
     chunks: chunkText(markdown),
-    meta: { createdVia: "notes" },
+    meta: { createdVia: "notes", ...(input.meta ?? {}) },
   });
   writeNoteBody(outcome.documentId, markdown);
   if (input.tags && input.tags.length > 0) setDocumentTags(outcome.documentId, input.tags);

@@ -30,6 +30,14 @@ npm run dev          # http://localhost:4173
 - Diacritic-insensitive matching, so `bao cao` finds `Báo cáo` as well
 - Filters by source, tag, connector and date, with facets on the result set
 
+**Curate the memory**
+- A memory map that groups everything by source and reports coverage: tagged, distilled, linked
+- One-pagers from five templates (guideline, project, meeting, decision, generic), in English or
+  Vietnamese, saved as notes linked back to their source and refreshed in place instead of duplicated
+- A hygiene review — duplicates, broken wiki links, empty, untagged, stale and orphan documents —
+  available as an API, a CLI command and the monthly **Brain review** play
+- All three in one page at `/curate`
+
 **Ask your memory**
 - RAG chat that answers only from retrieved passages and cites them as `[1]`, `[2]`
 - Token-by-token streaming, conversations kept in SQLite
@@ -74,6 +82,9 @@ Useful commands:
 | `npm test` | Vitest suite |
 | `npm run smoke` | End-to-end smoke test in a throwaway temp directory |
 | `npm run cli -- <command>` | CLI, e.g. `npm run cli -- search "quarterly report"` |
+| `npm run cli -- map` | Shelf map and coverage ratios |
+| `npm run cli -- distill <documentId>` | Write a one-pager and save it as a linked note |
+| `npm run cli -- review` | Knowledge hygiene report (exit 1 when high issues exist) |
 
 ---
 
@@ -124,6 +135,23 @@ See [docs/connectors.md](docs/connectors.md) for how to register each app.
 
 ---
 
+## Curating the memory
+
+Capture fills the brain; the curator keeps it usable. Three deterministic jobs run on top of the
+store, all reachable from `/curate`, the CLI and the API:
+
+1. **Map** — documents grouped by source with coverage ratios (tagged, distilled, linked).
+2. **Distil** — a one-page note per document, from five templates, linked back to its source and
+   updated in place on a re-run.
+3. **Review** — duplicates, broken wiki links, empty, untagged, stale and orphan documents, with
+   suggested next actions. The monthly **Brain review** play renders the same report.
+
+The full contract, including the template catalogue and metadata conventions, is in
+[docs/curator.md](docs/curator.md). Everything works without a model; the deterministic output is
+the fallback, not a placeholder.
+
+---
+
 ## Your data stays yours
 
 - Everything lives under `data/`: `brain.db`, uploaded `files/`, `backups/`, worker `state/`,
@@ -147,6 +175,7 @@ src/
     api/                   router, auth, request helpers
     connectors/            provider framework, OAuth plumbing, per-service providers
     crypto/                sealed storage for credentials
+    curator/               memory map, one-pager distillation, hygiene review
     db/                    connection, migrations, repositories
     extract/               PDF, DOCX, HTML, EML, text extractors
     import/                mbox, ICS, RFC822, Notion and Slack export importers
@@ -162,7 +191,7 @@ scripts/                   smoke test
 
 Deeper reading: [docs/architecture.md](docs/architecture.md) ·
 [docs/api.md](docs/api.md) · [docs/connectors.md](docs/connectors.md) ·
-[docs/deployment.md](docs/deployment.md)
+[docs/curator.md](docs/curator.md) · [docs/deployment.md](docs/deployment.md)
 
 ---
 

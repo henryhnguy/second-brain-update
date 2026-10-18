@@ -30,6 +30,14 @@ import { processJobsOnce } from "../lib/jobs/worker";
 import { ingestFile, ingestText, ingestUrl } from "../lib/ingest/pipeline";
 import { syncFolder } from "../lib/ingest/folder";
 import { runPlay } from "../lib/plays/engine";
+import {
+  buildHealthReport,
+  buildMasterIndex,
+  distillDocument,
+  renderIndexMarkdown,
+  renderReviewMarkdown,
+} from "../lib/curator";
+import type { DistillTemplateId } from "../lib/curator";
 import { search } from "../lib/retrieval/hybrid";
 import { getImporterFor } from "../lib/import";
 
@@ -92,6 +100,9 @@ async function main(): Promise<number> {
           "  sync [--provider id] [--connector id] [--max-items N]",
           "  index [--limit N]",
           "  play list | play run <playId> [--param key=value]",
+          "  map [--docs N]                print the memory map (shelves + coverage)",
+          "  review [--days N] [--json]    knowledge hygiene report",
+          "  distill <documentId> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]",
           "  export [--out file.json] [--limit N]",
           "  jobs [--process N]",
           "  doctor",
@@ -328,6 +339,37 @@ async function main(): Promise<number> {
       }
       console.error(`unknown play subcommand: ${sub}`);
       return 2;
+    }
+
+    case "map": {
+      console.log(renderIndexMarkdown(buildMasterIndex({ docsPerShelf: num(args.flags.docs, 3) })));
+      return 0;
+    }
+
+    case "review": {
+      const report = buildHealthReport({ days: num(args.flags.days, 180) });
+      if (args.flags.json === true) out(report);
+      else console.log(renderReviewMarkdown(report, args.flags.lang === "vi" ? "vi" : "en"));
+      return report.totals.bySeverity.high > 0 ? 1 : 0;
+    }
+
+    case "distill": {
+      const documentId = args._[1];
+      if (!documentId) {
+        console.error("usage: distill <documentId> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]");
+        return 2;
+      }
+      const result = await distillDocument({
+        documentId,
+        template: typeof args.flags.template === "string" ? (args.flags.template as DistillTemplateId) : undefined,
+        lang: args.flags.lang === "vi" ? "vi" : "en",
+        save: args.flags.preview !== true,
+      });
+      console.log(result.markdown);
+      if (result.noteId) {
+        console.log(`\n(saved as note ${result.noteId}${result.updated ? " · updated" : ""})`);
+      }
+      return 0;
     }
 
     case "export": {

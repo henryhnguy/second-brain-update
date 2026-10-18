@@ -70,6 +70,15 @@ export const BUILTIN_PLAYS: BuiltinPlay[] = [
     params: { topic: "" },
     usesLlm: true,
   },
+  {
+    id: "play_brain_review",
+    name: "Brain review",
+    kind: "brain_review",
+    description: "Monthly hygiene check: coverage, duplicates, untagged, stale and unlinked knowledge.",
+    schedule: "0 9 1 * *",
+    params: { days: 180 },
+    usesLlm: false,
+  },
 ];
 
 function mapPlay(row: Record<string, unknown>): Play {

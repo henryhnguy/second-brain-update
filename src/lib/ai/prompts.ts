@@ -74,6 +74,8 @@ export function playInstruction(kind: string, params: Record<string, unknown>): 
       return `Find documents: ${String(params.query ?? "whatever the user asked for")}. List at most 10 best-matching documents with their source path.`;
     case "topic_dossier":
       return `Dossier on "${String(params.topic ?? "")}": gather everything relevant in the memory, order it by time, and flag what is still unclear.`;
+    case "brain_review":
+      return "Brain review: report coverage (tagged, distilled, linked), duplicates, untagged, stale and unlinked documents, then propose the next three actions.";
     default:
       return String(params.instruction ?? "Summarise what the memory holds on this.");
   }

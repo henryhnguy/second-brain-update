@@ -340,6 +340,7 @@ export type PlayKind =
   | "open_loops"
   | "find_file"
   | "topic_dossier"
+  | "brain_review"
   | "custom";
 
 export type Play = {

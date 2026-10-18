@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Curator — map, distill, review.** The store could capture and answer, but nothing turned it into
+  a second brain: there was no inventory, no short version of a long document and no way to see what
+  had rotted. Three deterministic jobs close that gap. `buildMasterIndex()` groups documents by
+  source into shelves and reports the coverage ratios the rest of the feature builds on (tagged,
+  distilled, linked). `distillDocument()` writes a one-page note from one document using one of five
+  templates (generic, guideline, project, meeting, decision), in English or Vietnamese, saves it with
+  `{ kind: "summary", sourceDocumentId }` metadata and links it back with a `[[wiki link]]`; a second
+  run updates the same note instead of creating a duplicate. `buildHealthReport()` lists duplicates
+  by content hash, empty or failed documents, unresolved wiki links, documents without a one-pager,
+  orphan notes, untagged, stale and oversized documents, each with a severity. Exposed at
+  `/api/v1/curator/{index,health,templates,distill}`, on a new **Curate** page, and in the CLI as
+  `map`, `distill` and `review`. The built-in **Brain review** play renders the review as Markdown on
+  a monthly schedule. `createNote()` gained an optional `meta` field so summary notes can record
+  their source. Covered by six tests in `tests/curator.test.ts`; the full suite (101 tests) passes.
+
 ## [0.2.0] — 2026-10-15
 
 ### Added

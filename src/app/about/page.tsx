@@ -26,6 +26,13 @@ const FIND = [
   ["Filters", "By source, tag, connector and date, with facets on the matched set."],
 ];
 
+const CURATE = [
+  ["Map", "Documents grouped by source, with the share that is tagged, distilled and linked."],
+  ["Distil", "A one-page note per document from five templates, linked back and refreshed in place."],
+  ["Review", "Duplicates, broken links, empty, untagged, stale and orphan documents with a next action."],
+  ["Ritual", "Run the map weekly, the review monthly, and re-distil guidelines when they change."],
+];
+
 const ASK = [
   ["Grounded", "Answers use only the passages retrieved for your question, each claim carrying a [n] citation."],
   ["Cited", "Every citation points at the document, the section it came from and a snippet."],
@@ -40,13 +47,14 @@ const AUTOMATE = [
   ["Open loops", "Deadlines, unanswered requests and questions with no conclusion.", false],
   ["Find a document", "Answers \"where did I put that?\" with hybrid search.", false],
   ["Topic dossier", "A timeline of everything known about one topic.", true],
+  ["Brain review", "Monthly hygiene check: coverage, duplicates, stale and unlinked knowledge.", false],
 ];
 
 const OTHER = [
   ["Knowledge graph", "People, organisations and topics extracted with weights and co-occurrence — no model involved."],
   ["Timeline", "Everything you have saved, in the order it arrived."],
   ["Library", "Every document with its chunks, source, size and status."],
-  ["CLI", "health, doctor, stats, search, ask, add, ingest, sync, index, play, export, jobs."],
+  ["CLI", "health, doctor, stats, search, ask, add, ingest, sync, index, play, map, review, distill, export, jobs."],
   ["HTTP API", "Everything the UI does goes through /api/v1, so scripts can use it too."],
 ];
 
@@ -98,6 +106,26 @@ export default function AboutPage() {
         <p className="mt-3 text-xs">
           <Link href="/search" className="underline">
             Open Search →
+          </Link>
+        </p>
+      </Card>
+
+      <Card>
+        <CardTitle hint="the part that keeps it usable">Curate</CardTitle>
+        <ul className="space-y-2 text-sm">
+          {CURATE.map(([name, detail]) => (
+            <li key={name} className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+              <span className="w-40 shrink-0 font-medium">{name}</span>
+              <span className="text-muted">{detail}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted">
+          All three run without a model; a configured model only makes the one-pagers read better.
+        </p>
+        <p className="mt-3 text-xs">
+          <Link href="/curate" className="underline">
+            Open Curate →
           </Link>
         </p>
       </Card>

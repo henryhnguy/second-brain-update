@@ -76,6 +76,34 @@ describe("api router", () => {
     expect(payload.chunks.length).toBeGreaterThan(0);
   });
 
+  it("exposes the curator map and distils a document over the API", async () => {
+    const created = await call("POST", "ingest/text", {
+      body: {
+        text: "Backpart molding keeps the heel counter in shape. Do not overheat the counter.",
+        title: "MO - FTW.02 Backpart Molding",
+        tags: ["guideline"],
+      },
+    });
+    const documentId = (created.body as { documentId: string }).documentId;
+
+    const index = await call("GET", "curator/index");
+    expect(index.status).toBe(200);
+    expect((index.body as { totals: { documents: number } }).totals.documents).toBe(1);
+    expect((index.body as { coverage: { tagged: number } }).coverage.tagged).toBeCloseTo(1, 5);
+
+    const health = await call("GET", "curator/health");
+    expect(health.status).toBe(200);
+    expect((health.body as { totals: { documents: number } }).totals.documents).toBe(1);
+
+    const distilled = await call("POST", "curator/distill", {
+      body: { documentId, template: "guideline", lang: "vi", save: true },
+    });
+    expect(distilled.status).toBe(200);
+    const payload = distilled.body as { markdown: string; noteId: string | null };
+    expect(payload.markdown).toContain("## Mục đích");
+    expect(payload.noteId).toBeTruthy();
+  });
+
   it("validates request bodies and returns the error envelope", async () => {
     const invalid = await call("POST", "ingest/text", { body: {} });
     expect(invalid.status).toBe(400);

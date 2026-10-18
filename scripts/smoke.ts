@@ -92,11 +92,26 @@ async function main(): Promise<void> {
     play.usedLlm ? "used model" : "deterministic output",
   );
 
-  // 7. Capability registries are populated.
+  // 7. Curator: map, distill and review.
+  const { buildHealthReport, buildMasterIndex, distillDocument } = await import("../src/lib/curator");
+  const map = buildMasterIndex();
+  record("curator map", map.totals.documents > 0, `${map.totals.shelves} shelf(es), ${map.totals.summaries} one-pager(s)`);
+
+  const distilled = await distillDocument({ documentId: ingested.documentId, template: "generic", lang: "vi" });
+  record(
+    "curator distill",
+    Boolean(distilled.noteId) && distilled.markdown.includes("## Tóm tắt"),
+    distilled.updated ? "updated the existing note" : "saved a new note",
+  );
+
+  const review = buildHealthReport();
+  record("curator review", review.totals.documents > 0, `${review.totals.issues} issue(s), ${review.counts.unsummarized} missing one-pager(s)`);
+
+  // 8. Capability registries are populated.
   record("extractors registered", listExtractors().length >= 5, listExtractors().map((e) => e.id).join(", "));
   record("importers registered", listImporters().length >= 5, listImporters().map((i) => i.id).join(", "));
 
-  // 8. Stats snapshot reflects what was ingested.
+  // 9. Stats snapshot reflects what was ingested.
   const stats = buildStats(false);
   record("stats snapshot", stats.documents > 0 && stats.chunks > 0, `${stats.documents} doc(s), ${stats.chunks} chunk(s)`);
 

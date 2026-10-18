@@ -30,6 +30,7 @@ import {
   listMessages,
 } from "../db/repo/chat";
 import { createNote, deleteNote, getNote, listNotes, listTags, updateNote } from "../db/repo/notes";
+import { buildHealthReport, buildMasterIndex, distillDocument, listDistillTemplates } from "../curator";
 import { createPlay, deletePlay, listPlayRuns, listPlays, updatePlay } from "../db/repo/plays";
 import {
   cancelJob,
@@ -316,6 +317,38 @@ export const ROUTES: Route[] = [
       const hard = context.query.get("hard") === "1";
       if (!deleteDocument(params.id as string, { hard })) throw notFound("Document");
       return json({ deleted: true, hard });
+    },
+  },
+  {
+    method: "GET",
+    pattern: "curator/index",
+    handler: async () => json(buildMasterIndex()),
+  },
+  {
+    method: "GET",
+    pattern: "curator/health",
+    handler: async (context) =>
+      json(buildHealthReport({ days: numberParam(context.query.get("days"), 180, 30, 3_650) })),
+  },
+  {
+    method: "GET",
+    pattern: "curator/templates",
+    handler: async () => json({ templates: listDistillTemplates() }),
+  },
+  {
+    method: "POST",
+    pattern: "curator/distill",
+    handler: async (context) => {
+      const body = z
+        .object({
+          documentId: z.string().min(1),
+          template: z.enum(["generic", "guideline", "project", "meeting", "decision"]).optional(),
+          lang: z.enum(["en", "vi"]).optional(),
+          save: z.boolean().optional(),
+          useLlm: z.boolean().optional(),
+        })
+        .parse(await context.json());
+      return json(await distillDocument(body));
     },
   },
   {

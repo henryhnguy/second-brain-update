@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { Badge, Button, Card, CardTitle, KeyValue, Notice, Spinner, api } from "@/components/ui";
+import { Markdown } from "@/components/markdown";
 
 type Chunk = {
   id: string;
@@ -39,12 +40,28 @@ type DocumentDetail = {
   chunks: Chunk[];
 };
 
+type DistillTemplate = { id: string; name: string; description: string };
+
+type DistillResult = {
+  markdown: string;
+  template: string;
+  noteId: string | null;
+  noteTitle: string | null;
+  usedLlm: boolean;
+};
+
 export default function DocumentDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
   const [detail, setDetail] = useState<DocumentDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<DistillTemplate[]>([]);
+  const [template, setTemplate] = useState("generic");
+  const [lang, setLang] = useState<"en" | "vi">("en");
+  const [distilled, setDistilled] = useState<DistillResult | null>(null);
+  const [distilling, setDistilling] = useState(false);
+  const [distillError, setDistillError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -58,6 +75,29 @@ export default function DocumentDetailPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    api<{ templates: DistillTemplate[] }>("/api/v1/curator/templates")
+      .then((result) => setTemplates(result.templates))
+      .catch(() => setTemplates([]));
+  }, []);
+
+  async function distill() {
+    setDistilling(true);
+    setDistillError(null);
+    try {
+      const result = await api<DistillResult>("/api/v1/curator/distill", {
+        method: "POST",
+        body: JSON.stringify({ documentId: id, template, lang }),
+      });
+      setDistilled(result);
+      await load();
+    } catch (caught) {
+      setDistillError(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setDistilling(false);
+    }
+  }
 
   async function remove(hard: boolean) {
     if (!confirm(hard ? "Delete this document permanently (cannot be undone)?" : "Move this document to deleted?")) return;
@@ -128,6 +168,62 @@ export default function DocumentDetailPage() {
             ]}
           />
         </div>
+      </Card>
+
+      <Card>
+        <CardTitle hint="a short, linked note — the distillation layer">Distill to a one-pager</CardTitle>
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="text-[11px] text-muted">
+            Template
+            <select
+              value={template}
+              onChange={(event) => setTemplate(event.target.value)}
+              className="mt-1 block rounded-xl border border-line bg-raised px-2 py-1.5 text-sm text-ink"
+            >
+              {(templates.length > 0 ? templates : [{ id: "generic", name: "Generic one-pager", description: "" }]).map(
+                (entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.name}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+          <label className="text-[11px] text-muted">
+            Language
+            <select
+              value={lang}
+              onChange={(event) => setLang(event.target.value === "vi" ? "vi" : "en")}
+              className="mt-1 block rounded-xl border border-line bg-raised px-2 py-1.5 text-sm text-ink"
+            >
+              <option value="en">English</option>
+              <option value="vi">Tiếng Việt</option>
+            </select>
+          </label>
+          <Button variant="primary" onClick={() => void distill()} disabled={distilling}>
+            {distilling ? "Distilling…" : "Distill"}
+          </Button>
+          {distilled?.noteId ? (
+            <Link href={`/notes/${distilled.noteId}`} className="text-xs text-accent hover:underline">
+              Open the saved note →
+            </Link>
+          ) : null}
+          {distilled ? <Badge>{distilled.usedLlm ? "model" : "no model"}</Badge> : null}
+        </div>
+        {distillError ? (
+          <div className="mt-3">
+            <Notice tone="warn">{distillError}</Notice>
+          </div>
+        ) : null}
+        {distilled ? (
+          <div className="mt-3 max-h-96 overflow-auto rounded-xl border border-line bg-raised/60 p-3">
+            <Markdown>{distilled.markdown}</Markdown>
+          </div>
+        ) : (
+          <p className="mt-2 text-xs text-muted">
+            Writes a one-page note and links it back to this document; running it again updates the same note.
+          </p>
+        )}
       </Card>
 
       <Card>
