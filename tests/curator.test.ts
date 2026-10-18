@@ -166,4 +166,12 @@ describe("distill", () => {
       "decision",
     ]);
   });
+
+  it("refuses to distil an existing one-pager", async () => {
+    const seeded = seedGuideline();
+    const first = await distillDocument({ documentId: seeded.documentId, template: "guideline" });
+    await expect(distillDocument({ documentId: first.noteId as string, template: "generic" })).rejects.toThrow(
+      /already a one-pager/i,
+    );
+  });
 });

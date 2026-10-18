@@ -41,6 +41,9 @@ All notable changes to this project are documented here. The format follows
   `UNIQUE constraint failed: entities.type, entities.name_fold`. The lookup is now by
   `(type, name_fold)`, so the second spelling updates the existing entity. Found while importing a
   real corpus; covered by a regression test in `tests/ingest.test.ts`.
+- **Distilling a one-pager is rejected.** Running distill on a note that is itself a summary
+  produced a “One-pager — One-pager — …” chain. `distillDocument()` now refuses with a clear message
+  and points at the source document; covered in `tests/curator.test.ts`.
 
 ## [0.2.0] — 2026-10-15
 
