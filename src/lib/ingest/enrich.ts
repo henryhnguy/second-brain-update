@@ -110,14 +110,21 @@ export function upsertEntity(type: EntityType, name: string, alias?: string): st
   if (clean.length === 0) return "";
   const id = entityId(type, clean);
   const fold = foldForIndex(clean);
-  const existing = get<{ id: string; aliases: string }>(db, "SELECT id, aliases FROM entities WHERE id = ?", [id]);
+  // Identity is the folded name, not the id: "RS-X" and "RSX" (or two
+  // capitalisations) fold together and must update one row instead of tripping
+  // the (type, name_fold) unique index.
+  const existing = get<{ id: string; aliases: string }>(
+    db,
+    "SELECT id, aliases FROM entities WHERE type = ? AND name_fold = ?",
+    [type, fold],
+  );
   if (existing) {
     if (alias) {
       const aliases = new Set<string>(JSON.parse(existing.aliases || "[]") as string[]);
       aliases.add(alias);
-      run(db, "UPDATE entities SET aliases = ? WHERE id = ?", [JSON.stringify(Array.from(aliases)), id]);
+      run(db, "UPDATE entities SET aliases = ? WHERE id = ?", [JSON.stringify(Array.from(aliases)), existing.id]);
     }
-    return id;
+    return existing.id;
   }
   run(
     db,

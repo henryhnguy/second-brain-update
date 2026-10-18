@@ -191,3 +191,28 @@ describe("notes", () => {
     expect(getDocument(note.document.id)?.chunkCount).toBe(chunks.length);
   });
 });
+
+describe("entity identity", () => {
+  it("merges two spellings that fold to the same name instead of failing the ingest", () => {
+    // Identity is (type, folded name); the id is built from the original
+    // spelling, so before the fix the second insert tripped the unique index.
+    const first = ingestText({
+      text: "Assembly notes for the RSX build.",
+      title: "RSX notes",
+      sourceKind: "upload",
+      sourceId: "tests",
+      tags: ["RSX"],
+    });
+    const second = ingestText({
+      text: "Assembly notes for the RSX build, second revision.",
+      title: "RSX notes v2",
+      sourceKind: "upload",
+      sourceId: "tests",
+      tags: ["rsx"],
+    });
+
+    expect(first.status).toBe("created");
+    expect(second.status).toBe("created");
+    expect(listDocuments().total).toBe(2);
+  });
+});

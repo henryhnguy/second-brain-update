@@ -32,6 +32,16 @@ All notable changes to this project are documented here. The format follows
   and `meta infer` recovers `code`, `version` and `effectiveDate` from titles such as
   `MO - FTW.06 …_V3_03.18.2026.pdf`. Covered by `tests/ooxml.test.ts` and `tests/metadata.test.ts`.
 
+### Fixed
+
+- **Entity identity now follows the folded name.** `upsertEntity()` looked the row up by its id,
+  which is derived from the original spelling, while the unique index is on `(type, name_fold)`.
+  Two spellings that fold together — `RSX` and `rsx`, `RS-X` and `RSX` — therefore produced two
+  ids for one index key, and the second insert failed the ingest with
+  `UNIQUE constraint failed: entities.type, entities.name_fold`. The lookup is now by
+  `(type, name_fold)`, so the second spelling updates the existing entity. Found while importing a
+  real corpus; covered by a regression test in `tests/ingest.test.ts`.
+
 ## [0.2.0] — 2026-10-15
 
 ### Added
