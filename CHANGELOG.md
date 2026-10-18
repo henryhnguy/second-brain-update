@@ -21,7 +21,9 @@ All notable changes to this project are documented here. The format follows
   `/api/v1/curator/{index,health,templates,distill}`, on a new **Curate** page, and in the CLI as
   `map`, `distill` and `review`. The built-in **Brain review** play renders the review as Markdown on
   a monthly schedule. `createNote()` gained an optional `meta` field so summary notes can record
-  their source. Covered by six tests in `tests/curator.test.ts`; the full suite (101 tests) passes.
+  their source. `PATCH /api/v1/documents/:id` now merges a `meta` patch, so codes, versions and
+  owners can be recorded without touching the content. Covered by eight new tests (six in
+  `curator.test.ts`, two API cases); the full suite (103 tests) passes.
 
 ## [0.2.0] — 2026-10-15
 

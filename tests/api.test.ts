@@ -104,6 +104,23 @@ describe("api router", () => {
     expect(payload.noteId).toBeTruthy();
   });
 
+  it("stores document metadata used by the curator", async () => {
+    const created = await call("POST", "ingest/text", {
+      body: { text: "Product engineering guideline for the assembly line.", title: "MO - FTW.06" },
+    });
+    const documentId = (created.body as { documentId: string }).documentId;
+
+    const patched = await call("PATCH", `documents/${documentId}`, {
+      body: { meta: { code: "MO-FTW.06", version: "V3", status: "active" } },
+    });
+    expect(patched.status).toBe(200);
+
+    const detail = await call("GET", `documents/${documentId}`);
+    const meta = (detail.body as { document: { meta: Record<string, unknown> } }).document.meta;
+    expect(meta.code).toBe("MO-FTW.06");
+    expect(meta.status).toBe("active");
+  });
+
   it("validates request bodies and returns the error envelope", async () => {
     const invalid = await call("POST", "ingest/text", { body: {} });
     expect(invalid.status).toBe(400);

@@ -17,6 +17,7 @@ import {
   embeddingsByModel,
   getDocument,
   listDocuments,
+  setDocumentMeta,
   setDocumentPinned,
 } from "../db/repo/documents";
 import { createCollection, deleteCollection, listCollections, updateCollection } from "../db/repo/collections";
@@ -293,11 +294,18 @@ export const ROUTES: Route[] = [
     pattern: "documents/:id",
     handler: async (context, params) => {
       const body = z
-        .object({ title: z.string().optional(), pinned: z.boolean().optional(), markdown: z.string().optional(), tags: z.array(z.string()).optional() })
+        .object({
+          title: z.string().optional(),
+          pinned: z.boolean().optional(),
+          markdown: z.string().optional(),
+          tags: z.array(z.string()).optional(),
+          meta: z.record(z.unknown()).optional(),
+        })
         .parse(await context.json());
       const document = getDocument(params.id as string);
       if (!document) throw notFound("Document");
       if (body.pinned !== undefined) setDocumentPinned(document.id, body.pinned);
+      if (body.meta) setDocumentMeta(document.id, body.meta);
       if (document.sourceKind === "note" && (body.markdown !== undefined || body.title !== undefined || body.tags)) {
         const note = updateNote(document.id, {
           ...(body.title !== undefined ? { title: body.title } : {}),

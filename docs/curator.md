@@ -86,6 +86,14 @@ the index and the review far more useful:
 { "code": "MO-FTW.06", "version": "V3", "status": "active", "owner": "Engineering", "effectiveDate": "2026-03-18" }
 ```
 
+Write them without touching the content:
+
+```bash
+curl -s -X PATCH localhost:4173/api/v1/documents/<id> \
+  -H 'content-type: application/json' \
+  -d '{"meta":{"code":"MO-FTW.06","version":"V3","status":"active"}}'
+```
+
 ## 3. Linking
 
 The curator does not invent a new linking model; it leans on the two that exist:

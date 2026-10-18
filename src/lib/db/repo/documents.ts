@@ -303,6 +303,13 @@ export function setDocumentPinned(id: string, pinned: boolean): void {
   run(getDb(), "UPDATE documents SET pinned = ? WHERE id = ?", [pinned ? 1 : 0, id]);
 }
 
+/** Merges metadata into a document without touching its content. */
+export function setDocumentMeta(id: string, patch: Record<string, unknown>): void {
+  const current = getDocument(id);
+  if (!current) return;
+  run(getDb(), "UPDATE documents SET meta = ? WHERE id = ?", [JSON.stringify({ ...current.meta, ...patch }), id]);
+}
+
 export function deleteDocument(id: string, options: { hard?: boolean } = {}): boolean {
   const db = getDb();
   if (options.hard) {
