@@ -1,5 +1,6 @@
 import { getAiConfig } from "../ai/config";
 import { chatComplete, chatConfigured } from "../ai/chat-provider";
+import { badRequest } from "../core/errors";
 import { createLogger } from "../core/logger";
 import { normalizeWhitespace, truncate } from "../core/text";
 import { nowIso } from "../core/time";
@@ -922,7 +923,7 @@ export async function distillDocument(input: DistillInput): Promise<DistillResul
   const doc = getDocument(input.documentId);
   if (!doc) throw new Error(`Document ${input.documentId} not found`);
   if (doc.meta.kind === "summary") {
-    throw new Error("This document is already a one-pager. Distill its source document instead.");
+    throw badRequest("This document is already a one-pager. Distill its source document instead.");
   }
   const template = getDistillTemplate(input.template);
   const lang: DistillLang = input.lang === "vi" ? "vi" : "en";
