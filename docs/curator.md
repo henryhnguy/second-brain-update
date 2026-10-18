@@ -132,6 +132,36 @@ npm run cli -- review --json    # the raw report
 npm run cli -- play run play_brain_review
 ```
 
+## Bringing a corpus in
+
+Two entry points cover the first load:
+
+```bash
+# Whole folder: text formats plus .pdf, .docx, .xlsx/.xlsm and .pptx
+npm run cli -- ingest folder "D:/Engineering"
+
+# Only the files a plan names (e.g. a reorganisation spreadsheet)
+npm run cli -- ingest list manifest.json
+```
+
+`manifest.json` is either an array or `{ "files": [...] }`, each entry
+`{ "path", "sourceId"?, "externalId"?, "title"?, "meta"? }`. `sourceId` becomes the shelf on the
+map, so a sheet-derived import can mirror the folder plan instead of the disk layout. Originals are
+not copied into `data/files` unless `--keep` is passed.
+
+Legacy binaries (`.doc`, `.ppt`, `.xls`), images and `.msg` are skipped on purpose: they have no
+text extractor, and indexing their bytes as plain text would poison retrieval.
+
+After the load, recover the identity the file names already carry:
+
+```bash
+npm run cli -- meta infer --dry-run   # review the parse
+npm run cli -- meta infer             # merge code, version and effectiveDate into meta
+```
+
+The parser understands `MO - FTW.06 …_V3_03.18.2026.pdf`, `QMS-FTW-02 …_31.08.2023_V03.pdf` and
+`QMS-FTW.13 … V02_31.07.2024.pdf`. It fills only missing keys unless `--overwrite` is passed.
+
 ## Ritual
 
 | Cadence | Action |

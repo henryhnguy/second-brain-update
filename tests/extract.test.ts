@@ -175,7 +175,7 @@ describe("extract: registry", () => {
     ensureExtractorsRegistered();
     ensureExtractorsRegistered();
     const ids = listExtractors().map((extractor) => extractor.id);
-    for (const id of ["text", "html", "pdf", "docx", "eml"]) {
+    for (const id of ["text", "html", "pdf", "docx", "xlsx", "pptx", "eml"]) {
       expect(ids).toContain(id);
     }
     expect(ids.filter((id) => id === "pdf")).toHaveLength(1);

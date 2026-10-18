@@ -179,7 +179,7 @@ describe("api router", () => {
 
     const capabilities = await call("GET", "capabilities");
     const payload = capabilities.body as { extractors: { id: string; extensions: string[] }[]; importers: { id: string }[] };
-    expect(payload.extractors.map((extractor) => extractor.id)).toEqual(["text", "html", "pdf", "docx", "eml"]);
+    expect(payload.extractors.map((extractor) => extractor.id)).toEqual(["text", "html", "pdf", "docx", "xlsx", "pptx", "eml"]);
     expect(payload.extractors.some((extractor) => extractor.extensions.includes(".md"))).toBe(true);
     expect(payload.importers.map((importer) => importer.id).sort()).toEqual(["eml", "ics", "mbox", "notion_zip", "slack_zip"]);
   });

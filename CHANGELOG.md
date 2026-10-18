@@ -24,6 +24,13 @@ All notable changes to this project are documented here. The format follows
   their source. `PATCH /api/v1/documents/:id` now merges a `meta` patch, so codes, versions and
   owners can be recorded without touching the content. Covered by eight new tests (six in
   `curator.test.ts`, two API cases); the full suite (103 tests) passes.
+- **OOXML extractors and corpus onboarding.** `.xlsx`/`.xlsm` and `.pptx` are extracted from their
+  ZIP parts — shared strings, one line per row, slide runs and speaker notes — so a workbook-heavy
+  corpus is searchable without a spreadsheet library. Legacy `.doc`/`.ppt`/`.xls`, images and `.msg`
+  stay skipped rather than being indexed as binary noise. `ingest list <manifest.json>` imports an
+  explicit file list (how a reorganisation spreadsheet is loaded without walking unrelated folders),
+  and `meta infer` recovers `code`, `version` and `effectiveDate` from titles such as
+  `MO - FTW.06 …_V3_03.18.2026.pdf`. Covered by `tests/ooxml.test.ts` and `tests/metadata.test.ts`.
 
 ## [0.2.0] — 2026-10-15
 

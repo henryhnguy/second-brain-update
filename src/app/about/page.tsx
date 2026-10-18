@@ -11,7 +11,7 @@ import { Badge, Card, CardTitle } from "@/components/ui";
 
 const CAPTURE = [
   ["Notes", "Markdown with [[wiki links]] and #tags, plus backlinks between them."],
-  ["Files", ".pdf, .docx, .md, .txt, .html, .eml and .csv, parsed on this machine."],
+  ["Files", ".pdf, .docx, .xlsx, .pptx, .md, .txt, .html, .eml and .csv, parsed on this machine."],
   ["Web pages", "Paste a URL and the readable text is extracted server-side."],
   ["Folders", "Point it at an Obsidian vault or a documents folder and re-sync on change."],
   ["Exports", "mbox (mail), ICS (calendar), Notion and Slack export zips, single .eml files."],
@@ -54,7 +54,7 @@ const OTHER = [
   ["Knowledge graph", "People, organisations and topics extracted with weights and co-occurrence — no model involved."],
   ["Timeline", "Everything you have saved, in the order it arrived."],
   ["Library", "Every document with its chunks, source, size and status."],
-  ["CLI", "health, doctor, stats, search, ask, add, ingest, sync, index, play, map, review, distill, export, jobs."],
+  ["CLI", "health, doctor, stats, search, ask, add, ingest (incl. list), sync, index, play, map, review, distill, meta, export, jobs."],
   ["HTTP API", "Everything the UI does goes through /api/v1, so scripts can use it too."],
 ];
 

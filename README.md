@@ -18,7 +18,7 @@ npm run dev          # http://localhost:4173
 
 **Capture anything**
 - Markdown notes with `[[wiki links]]`, `#tags`, backlinks and a knowledge graph
-- File upload: `.pdf`, `.docx`, `.md`, `.txt`, `.html`, `.eml`, `.csv`
+- File upload: `.pdf`, `.docx`, `.xlsx`, `.xlsm`, `.pptx`, `.md`, `.txt`, `.html`, `.eml`, `.csv`
 - Paste raw text, or save a URL (page text is extracted server-side)
 - Folder sync: point it at an Obsidian vault or a documents folder and re-sync on change
 - Import exports: `mbox`, `ics`, Notion zip, Slack zip, `.eml`
@@ -85,6 +85,8 @@ Useful commands:
 | `npm run cli -- map` | Shelf map and coverage ratios |
 | `npm run cli -- distill <documentId>` | Write a one-pager and save it as a linked note |
 | `npm run cli -- review` | Knowledge hygiene report (exit 1 when high issues exist) |
+| `npm run cli -- meta infer` | Fill `code`, `version`, `effectiveDate` from document titles |
+| `npm run cli -- ingest list manifest.json` | Import an explicit list of files (spreadsheet-driven onboarding) |
 
 ---
 

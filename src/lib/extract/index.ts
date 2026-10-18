@@ -8,6 +8,7 @@
 import { emlExtractor } from "./eml";
 import { docxExtractor } from "./docx";
 import { htmlExtractor } from "./html";
+import { pptxExtractor, xlsxExtractor } from "./ooxml";
 import { pdfExtractor } from "./pdf";
 import { registerExtractor } from "./registry";
 import { textExtractor } from "./text";
@@ -17,6 +18,8 @@ const BUILT_IN_EXTRACTORS = [
   htmlExtractor,
   pdfExtractor,
   docxExtractor,
+  xlsxExtractor,
+  pptxExtractor,
   emlExtractor,
 ];
 

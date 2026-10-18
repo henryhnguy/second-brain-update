@@ -5,10 +5,14 @@
  *   health | stats
  *   search <query> [--mode hybrid|keyword|semantic] [--limit N] [--source id] [--tag slug]
  *   add [--title T] [--tags a,b] [--file path] [text]
- *   ingest file <paths...> | url <url> | folder <root> [--force] | importer <paths...>
+ *   ingest file <paths...> | url <url> | folder <root> [--force] | list <manifest.json> | importer <paths...>
  *   sync [--provider id] [--connector id] [--max-items N]
  *   index [--limit N]            backfill embeddings for chunks that lack them
  *   play list | play run <playId> [--param key=value]
+ *   map [--docs N]                print the memory map
+ *   review [--days N] [--json]    knowledge hygiene report
+ *   distill <id>|--filter <path>  one-pagers, single or batch
+ *   meta infer [--dry-run]        infer code/version/date from titles
  *   export [--out file.json] [--limit N]
  *   jobs [--process N]
  *   doctor                        capabilities, data paths, embedding coverage
@@ -37,6 +41,7 @@ import {
   renderIndexMarkdown,
   renderReviewMarkdown,
 } from "../lib/curator";
+import { applyInferredMetadata } from "../lib/curator/metadata";
 import type { DistillTemplateId } from "../lib/curator";
 import { search } from "../lib/retrieval/hybrid";
 import { getImporterFor } from "../lib/import";
@@ -96,13 +101,14 @@ async function main(): Promise<number> {
           "  health | stats",
           "  search <query> [--mode hybrid|keyword|semantic] [--limit N] [--source id] [--tag slug]",
           "  add [--title T] [--tags a,b] [--file path] [text]",
-          "  ingest file <paths...> | url <url> | folder <root> [--force] | importer <paths...>",
+          "  ingest file <paths...> | url <url> | folder <root> [--force] | list <manifest.json> | importer <paths...>",
           "  sync [--provider id] [--connector id] [--max-items N]",
           "  index [--limit N]",
           "  play list | play run <playId> [--param key=value]",
           "  map [--docs N]                print the memory map (shelves + coverage)",
           "  review [--days N] [--json]    knowledge hygiene report",
-          "  distill <documentId> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]",
+          "  distill <documentId>|--filter <path> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]",
+          "  meta infer [--dry-run] [--overwrite]   infer code/version/date from titles",
           "  export [--out file.json] [--limit N]",
           "  jobs [--process N]",
           "  doctor",
@@ -247,6 +253,55 @@ async function main(): Promise<number> {
         });
         return report.failed > 0 ? 1 : 0;
       }
+      if (sub === "list") {
+        const manifestPath = paths[0];
+        if (!manifestPath) {
+          console.error("usage: ingest list <manifest.json> [--force] [--keep]");
+          return 2;
+        }
+        const raw = JSON.parse(fs.readFileSync(manifestPath, "utf8")) as unknown;
+        const entries = (Array.isArray(raw) ? raw : ((raw as { files?: unknown[] }).files ?? [])) as {
+          path?: string;
+          sourceId?: string;
+          externalId?: string;
+          title?: string;
+          meta?: Record<string, unknown>;
+        }[];
+        let created = 0;
+        let updated = 0;
+        let failed = 0;
+        const failures: { file: string; error: string }[] = [];
+        for (const entry of entries) {
+          if (!entry.path) continue;
+          try {
+            const bytes = new Uint8Array(fs.readFileSync(entry.path));
+            const result = await ingestFile({
+              bytes,
+              filename: path.basename(entry.path),
+              sourceId: entry.sourceId ?? `manifest:${path.basename(path.dirname(manifestPath))}`,
+              sourceKind: "folder",
+              externalId: entry.externalId ?? entry.path,
+              path: entry.path,
+              title: entry.title,
+              meta: entry.meta,
+              keepOriginal: args.flags.keep === true,
+              force: args.flags.force === true,
+            });
+            if (result.status === "created") created += 1;
+            else if (result.status === "updated") updated += 1;
+            else if (result.status === "failed") {
+              failed += 1;
+              failures.push({ file: entry.path, error: result.error ?? "failed" });
+            }
+            console.log(`${result.status.toUpperCase()}  ${entry.title ?? path.basename(entry.path)}`);
+          } catch (error) {
+            failed += 1;
+            failures.push({ file: entry.path, error: error instanceof Error ? error.message : String(error) });
+          }
+        }
+        out({ total: entries.length, created, updated, failed, failures: failures.slice(0, 20) });
+        return failed > 0 ? 1 : 0;
+      }
       if (sub === "importer") {
         if (paths.length === 0) {
           console.error("usage: ingest importer <paths...>");
@@ -355,21 +410,61 @@ async function main(): Promise<number> {
 
     case "distill": {
       const documentId = args._[1];
-      if (!documentId) {
-        console.error("usage: distill <documentId> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]");
+      const filter = typeof args.flags.filter === "string" ? args.flags.filter : null;
+      const template = typeof args.flags.template === "string" ? (args.flags.template as DistillTemplateId) : undefined;
+      const lang = args.flags.lang === "vi" ? "vi" : "en";
+      const save = args.flags.preview !== true;
+
+      if (!documentId && !filter) {
+        console.error(
+          "usage: distill <documentId>|--filter <path substring> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview] [--limit N]",
+        );
         return 2;
       }
-      const result = await distillDocument({
-        documentId,
-        template: typeof args.flags.template === "string" ? (args.flags.template as DistillTemplateId) : undefined,
-        lang: args.flags.lang === "vi" ? "vi" : "en",
-        save: args.flags.preview !== true,
-      });
+
+      if (filter) {
+        const { items } = listDocuments({ limit: 500, orderBy: "title" });
+        const matches = items.filter(
+          (doc) =>
+            (doc.path ?? "").includes(filter) || doc.title.includes(filter) || doc.sourceId.includes(filter),
+        );
+        const limit = num(args.flags.limit, matches.length);
+        let saved = 0;
+        let failed = 0;
+        for (const doc of matches.slice(0, limit)) {
+          try {
+            const result = await distillDocument({ documentId: doc.id, template, lang, save });
+            saved += result.noteId ? 1 : 0;
+            console.log(`OK   ${doc.title}${result.updated ? " (updated)" : ""}`);
+          } catch (error) {
+            failed += 1;
+            console.log(`FAIL ${doc.title} — ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+        console.log(`\n${matches.slice(0, limit).length} matched · ${saved} saved · ${failed} failed`);
+        return failed > 0 ? 1 : 0;
+      }
+
+      const result = await distillDocument({ documentId: documentId as string, template, lang, save });
       console.log(result.markdown);
       if (result.noteId) {
         console.log(`\n(saved as note ${result.noteId}${result.updated ? " · updated" : ""})`);
       }
       return 0;
+    }
+
+    case "meta": {
+      if (sub === "infer" || sub === undefined) {
+        const report = applyInferredMetadata({
+          dryRun: args.flags["dry-run"] === true,
+          overwrite: args.flags.overwrite === true,
+          limit: num(args.flags.limit, 10_000),
+        });
+        out(report);
+        return 0;
+      }
+      console.error("usage: meta infer [--dry-run] [--overwrite] [--limit N]");
+      return 2;
     }
 
     case "export": {

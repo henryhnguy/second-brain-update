@@ -32,7 +32,7 @@ const SKIP_DIRS = new Set([
 
 const MAX_FILE_BYTES = 32 * 1024 * 1024;
 
-export const DEFAULT_FOLDER_EXTENSIONS: string[] = [...TEXT_EXTENSIONS, ".pdf", ".docx"];
+export const DEFAULT_FOLDER_EXTENSIONS: string[] = [...TEXT_EXTENSIONS, ".pdf", ".docx", ".xlsx", ".xlsm", ".pptx"];
 
 export type FolderSyncOptions = {
   root: string;
