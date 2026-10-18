@@ -669,8 +669,13 @@ function text(value: { en: string; vi: string }, lang: DistillLang): string {
 function sentences(textValue: string): string[] {
   return normalizeWhitespace(textValue)
     .split(/(?<=[.!?…])\s+|\n+/)
-    .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length >= 40 && sentence.length <= 480);
+    .map((sentence) => sentence.replace(/^[\s▪•·\-–—]+/, "").trim())
+    .filter((sentence) => sentence.length >= 40 && sentence.length <= 480)
+    // PDF tables of contents and page furniture dominate the first chunks of a
+    // manual; they are not rules and make a one-pager look broken.
+    .filter((sentence) => !/(\.{4,}|…{2,})/.test(sentence))
+    .filter((sentence) => !/^\s*(page|trang)\s*\d+/i.test(sentence))
+    .filter((sentence) => !/^\s*(table of contents|mục lục)\b/i.test(sentence));
 }
 
 const STOP_WORDS = new Set(
@@ -798,7 +803,8 @@ function buildContext(doc: Doc, chunks: { text: string; headingPath: string | nu
     .map((sentence, position) => {
       const lower = sentence.toLowerCase();
       const hits = Array.from(top).filter((term) => lower.includes(term)).length;
-      return { sentence, score: hits * 10 - position / 100 };
+      const words = sentence.split(/\s+/).length;
+      return { sentence, score: hits * 10 + Math.min(words, 40) / 10 - position / 100 };
     })
     .sort((a, b) => b.score - a.score)
     .map((entry) => entry.sentence);
