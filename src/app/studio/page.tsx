@@ -27,8 +27,28 @@ type ArtifactRow = {
 
 type ArtifactResult = ArtifactRow & { markdown: string };
 
-const KINDS = [
-  {
+/**
+ * The picker must show the whole library, not just the newest page: guidelines
+ * are often older than the hundred most recent captures. Pages of 200 are
+ * cheap here (a few hundred documents at most).
+ */
+async function loadAllDocuments(): Promise<DocumentRow[]> {
+  const all: DocumentRow[] = [];
+  let offset = 0;
+  let total = Number.POSITIVE_INFINITY;
+  while (all.length < total && all.length < 2_000) {
+    const page = await api<{ items: DocumentRow[]; total: number }>(
+      `/api/v1/documents?limit=200&offset=${offset}&order=title`,
+    );
+    total = page.total;
+    if (page.items.length === 0) break;
+    all.push(...page.items);
+    offset += page.items.length;
+  }
+  return all;
+}
+
+const KINDS = [  {
     id: "lesson" as const,
     name: "Lesson",
     detail: "Objectives, core concepts, key terms, a worked example, quiz and flashcards.",
@@ -51,6 +71,7 @@ export default function StudioPage() {
   const [artifacts, setArtifacts] = useState<ArtifactRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
+  const [shelf, setShelf] = useState("");
   const [kind, setKind] = useState<"lesson" | "slides" | "mindmap">("lesson");
   const [lang, setLang] = useState<"en" | "vi">("en");
   const [maxSlides, setMaxSlides] = useState("10");
@@ -62,10 +83,10 @@ export default function StudioPage() {
     setLoading(true);
     try {
       const [docs, recent] = await Promise.all([
-        api<{ items: DocumentRow[] }>("/api/v1/documents?limit=100&order=created"),
+        loadAllDocuments(),
         api<{ artifacts: ArtifactRow[] }>("/api/v1/studio/artifacts?limit=12"),
       ]);
-      setDocuments(docs.items);
+      setDocuments(docs);
       setArtifacts(recent.artifacts);
       setError(null);
     } catch (caught) {
@@ -79,13 +100,19 @@ export default function StudioPage() {
     void load();
   }, [load]);
 
+  const shelves = useMemo(
+    () => Array.from(new Set(documents.map((doc) => doc.sourceId))).sort((a, b) => a.localeCompare(b)),
+    [documents],
+  );
+
   const visible = useMemo(() => {
     const needle = filter.trim().toLowerCase();
-    if (needle.length === 0) return documents;
-    return documents.filter(
-      (doc) => doc.title.toLowerCase().includes(needle) || doc.sourceId.toLowerCase().includes(needle),
-    );
-  }, [documents, filter]);
+    return documents.filter((doc) => {
+      if (shelf.length > 0 && doc.sourceId !== shelf) return false;
+      if (needle.length === 0) return true;
+      return doc.title.toLowerCase().includes(needle) || doc.sourceId.toLowerCase().includes(needle);
+    });
+  }, [documents, filter, shelf]);
 
   function toggle(id: string) {
     setSelected((current) => {
@@ -135,12 +162,22 @@ export default function StudioPage() {
           <CardTitle hint={`${selected.size} selected`}>1 · Sources</CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <div className="min-w-[200px] flex-1">
-              <Input value={filter} onChange={setFilter} placeholder="Filter by title or source, e.g. guideline" />
+              <Input value={filter} onChange={setFilter} placeholder="Search title or source, e.g. MO - FTW.02" />
             </div>
+            <select
+              value={shelf}
+              onChange={(event) => setShelf(event.target.value)}
+              className="rounded-xl border border-line bg-raised px-2 py-2 text-sm text-ink"
+            >
+              <option value="">All shelves ({documents.length})</option>
+              {shelves.map((name) => (
+                <option key={name} value={name}>
+                  {name} ({documents.filter((doc) => doc.sourceId === name).length})
+                </option>
+              ))}
+            </select>
             <Button
-              onClick={() =>
-                setSelected(new Set(visible.slice(0, 25).map((doc) => doc.id)))
-              }
+              onClick={() => setSelected(new Set(visible.slice(0, 25).map((doc) => doc.id)))}
               disabled={visible.length === 0}
             >
               Select first 25
@@ -149,6 +186,14 @@ export default function StudioPage() {
               Clear
             </Button>
           </div>
+          <p className="mt-2 text-[11px] text-muted">
+            Showing {visible.length} of {documents.length} documents
+            {shelf ? ` in ${shelf}` : ""}. Missing a file?{" "}
+            <Link href="/import" className="underline">
+              Import it
+            </Link>{" "}
+            first.
+          </p>
 
           <div className="mt-3 max-h-80 space-y-1 overflow-auto rounded-xl border border-line bg-raised/40 p-2">
             {loading ? (

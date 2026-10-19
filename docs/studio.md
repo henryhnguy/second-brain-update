@@ -24,6 +24,10 @@ sources ──▶ lesson   (objectives, concepts, terms, example, quiz, flashcar
 `limit` caps the set (default 8, max 25). Fewer, focused sources make a better lesson; a wide set is
 better for a survey deck.
 
+The picker loads the whole library (200 documents per page, up to 2,000), can narrow it by shelf, and
+searches titles and source ids. The “Showing N of M documents” line makes it obvious when a filter is
+hiding the file you want; anything not imported yet goes through **Import** first.
+
 ## The lesson
 
 A deterministic lesson contains:

@@ -61,6 +61,11 @@ All notable changes to this project are documented here. The format follows
 - **Distilling a one-pager is rejected.** Running distill on a note that is itself a summary
   produced a “One-pager — One-pager — …” chain. `distillDocument()` now refuses with a clear message
   and points at the source document; covered in `tests/curator.test.ts`.
+- **Studio's source picker now shows the whole library.** It loaded only the 100 most recent
+  documents, so an older guideline (for example `MO - FTW.02`) could not be selected at all — the
+  filter only searched that first page. The page paginates the library (200 at a time, up to 2,000),
+  adds a shelf selector with per-shelf counts, and shows “Showing N of M documents”; verified against
+  384 documents with a real click through the Chrome DevTools Protocol.
 
 ## [0.2.0] — 2026-10-15
 
