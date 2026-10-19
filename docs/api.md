@@ -92,6 +92,15 @@ Codes include `bad_request`, `unauthorized`, `not_found`, `conflict`, `upstream_
 | `GET` | `/curator/templates` | The five distillation templates |
 | `POST` | `/curator/distill` | `{ documentId, template?, lang?, save?, useLlm? }` → one-pager plus the saved note id |
 
+### Studio
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/studio/generate` | `{ kind: "lesson"\|"slides", documentIds?, collectionId?, query?, limit?, maxSlides?, lang?, useLlm?, title? }` |
+| `GET` | `/studio/artifacts` | Recent artifacts; `kind`, `limit` |
+| `GET` | `/studio/artifacts/:id` | One artifact, slides and citations included |
+| `DELETE` | `/studio/artifacts/:id` | Delete the artifact; sources stay in the library |
+
 ### Connectors, plays, jobs and settings
 
 | Method | Path | Notes |

@@ -13,6 +13,7 @@
  *   review [--days N] [--json]    knowledge hygiene report
  *   distill <id>|--filter <path>  one-pagers, single or batch
  *   meta infer [--dry-run]        infer code/version/date from titles
+ *   studio lesson|slides          build a lesson or a slide deck from sources
  *   export [--out file.json] [--limit N]
  *   jobs [--process N]
  *   doctor                        capabilities, data paths, embedding coverage
@@ -42,6 +43,9 @@ import {
   renderReviewMarkdown,
 } from "../lib/curator";
 import { applyInferredMetadata } from "../lib/curator/metadata";
+import { getArtifact, listArtifacts } from "../lib/db/repo/artifacts";
+import { generateArtifact } from "../lib/studio";
+import { slidesToMarp } from "../lib/studio/format";
 import type { DistillTemplateId } from "../lib/curator";
 import { search } from "../lib/retrieval/hybrid";
 import { getImporterFor } from "../lib/import";
@@ -109,6 +113,8 @@ async function main(): Promise<number> {
           "  review [--days N] [--json]    knowledge hygiene report",
           "  distill <documentId>|--filter <path> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]",
           "  meta infer [--dry-run] [--overwrite]   infer code/version/date from titles",
+          "  studio lesson|slides [--docs id,id | --filter path | --query q] [--limit N] [--max-slides N] [--lang en|vi] [--no-llm]",
+          "  studio list | studio show <id> | studio export <id> [--out file]",
           "  export [--out file.json] [--limit N]",
           "  jobs [--process N]",
           "  doctor",
@@ -464,6 +470,85 @@ async function main(): Promise<number> {
         return 0;
       }
       console.error("usage: meta infer [--dry-run] [--overwrite] [--limit N]");
+      return 2;
+    }
+
+    case "studio": {
+      if (sub === "list") {
+        out(
+          listArtifacts({ limit: num(args.flags.limit, 20) }).map((artifact) => ({
+            id: artifact.id,
+            kind: artifact.kind,
+            title: artifact.title,
+            sources: artifact.documentIds.length,
+            usedLlm: artifact.usedLlm,
+            createdAt: artifact.createdAt,
+          })),
+        );
+        return 0;
+      }
+
+      if (sub === "show" || sub === "export") {
+        const artifactId = args._[2];
+        if (!artifactId) {
+          console.error(`usage: studio ${sub} <artifactId>${sub === "export" ? " [--out file]" : ""}`);
+          return 2;
+        }
+        const artifact = getArtifact(artifactId);
+        if (!artifact) {
+          console.error(`artifact not found: ${artifactId}`);
+          return 1;
+        }
+        if (sub === "export") {
+          if (typeof args.flags.out !== "string") {
+            console.error("usage: studio export <artifactId> --out <file>");
+            return 2;
+          }
+          const content = artifact.kind === "slides" ? slidesToMarp(artifact.slides, artifact.title) : artifact.markdown;
+          fs.writeFileSync(args.flags.out, content, "utf8");
+          console.log(`Wrote ${artifact.kind} to ${args.flags.out}`);
+          return 0;
+        }
+        console.log(artifact.markdown);
+        console.log(`\n(id ${artifact.id} · ${artifact.kind} · ${artifact.citations.length} sources · ${artifact.usedLlm ? "model" : "no model"})`);
+        return 0;
+      }
+
+      if (sub === "lesson" || sub === "slides") {
+        const docs = typeof args.flags.docs === "string" ? args.flags.docs.split(",").map((id) => id.trim()).filter(Boolean) : [];
+        let documentIds = docs;
+        if (documentIds.length === 0 && typeof args.flags.filter === "string") {
+          const filter = args.flags.filter;
+          documentIds = listDocuments({ limit: 500, orderBy: "title" })
+            .items.filter(
+              (doc) => (doc.path ?? "").includes(filter) || doc.title.includes(filter) || doc.sourceId.includes(filter),
+            )
+            .map((doc) => doc.id);
+        }
+        if (documentIds.length === 0 && typeof args.flags.query !== "string") {
+          console.error(
+            "usage: studio lesson|slides --docs id1,id2 | --filter <path substring> | --query <search> [--limit N]",
+          );
+          return 2;
+        }
+        const artifact = await generateArtifact({
+          kind: sub,
+          ...(documentIds.length > 0 ? { documentIds } : {}),
+          ...(typeof args.flags.query === "string" ? { query: args.flags.query } : {}),
+          limit: num(args.flags.limit, 8),
+          maxSlides: num(args.flags["max-slides"], 10),
+          lang: args.flags.lang === "vi" ? "vi" : "en",
+          useLlm: args.flags["no-llm"] !== true,
+          ...(typeof args.flags.title === "string" ? { title: args.flags.title } : {}),
+        });
+        console.log(artifact.markdown);
+        console.log(
+          `\n(${artifact.kind} ${artifact.id} · ${artifact.citations.length} sources · ${artifact.usedLlm ? "with model" : "without model"})`,
+        );
+        return 0;
+      }
+
+      console.error("usage: studio lesson|slides | studio list | studio show <id> | studio export <id> --out <file>");
       return 2;
     }
 

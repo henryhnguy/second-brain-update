@@ -107,11 +107,23 @@ async function main(): Promise<void> {
   const review = buildHealthReport();
   record("curator review", review.totals.documents > 0, `${review.totals.issues} issue(s), ${review.counts.unsummarized} missing one-pager(s)`);
 
-  // 8. Capability registries are populated.
+  // 8. Studio: a lesson and a deck from the same source.
+  const { generateArtifact } = await import("../src/lib/studio");
+  const lesson = await generateArtifact({ kind: "lesson", documentIds: [ingested.documentId], useLlm: false });
+  record(
+    "studio lesson",
+    lesson.markdown.includes("## Learning objectives") && lesson.citations.length > 0,
+    `${lesson.markdown.length} chars, ${lesson.citations.length} citation(s)`,
+  );
+
+  const deck = await generateArtifact({ kind: "slides", documentIds: [ingested.documentId], useLlm: false, maxSlides: 6 });
+  record("studio deck", deck.slides.length >= 4, `${deck.slides.length} slide(s)`);
+
+  // 9. Capability registries are populated.
   record("extractors registered", listExtractors().length >= 5, listExtractors().map((e) => e.id).join(", "));
   record("importers registered", listImporters().length >= 5, listImporters().map((i) => i.id).join(", "));
 
-  // 9. Stats snapshot reflects what was ingested.
+  // 10. Stats snapshot reflects what was ingested.
   const stats = buildStats(false);
   record("stats snapshot", stats.documents > 0 && stats.chunks > 0, `${stats.documents} doc(s), ${stats.chunks} chunk(s)`);
 

@@ -33,6 +33,13 @@ const CURATE = [
   ["Ritual", "Run the map weekly, the review monthly, and re-distil guidelines when they change."],
 ];
 
+const STUDIO = [
+  ["Lesson", "Objectives, core concepts, key terms, a worked example, a quiz and flashcards."],
+  ["Deck", "Title, agenda, one slide per source, takeaways and sources, with speaker notes."],
+  ["Present", "Arrow keys, Esc, notes toggle and a full-screen mode in the app."],
+  ["Export", "Marp Markdown for deck tools, or one standalone HTML file with no dependencies."],
+];
+
 const ASK = [
   ["Grounded", "Answers use only the passages retrieved for your question, each claim carrying a [n] citation."],
   ["Cited", "Every citation points at the document, the section it came from and a snippet."],
@@ -54,7 +61,7 @@ const OTHER = [
   ["Knowledge graph", "People, organisations and topics extracted with weights and co-occurrence — no model involved."],
   ["Timeline", "Everything you have saved, in the order it arrived."],
   ["Library", "Every document with its chunks, source, size and status."],
-  ["CLI", "health, doctor, stats, search, ask, add, ingest (incl. list), sync, index, play, map, review, distill, meta, export, jobs."],
+  ["CLI", "health, doctor, stats, search, ask, add, ingest (incl. list), sync, index, play, map, review, distill, meta, studio, export, jobs."],
   ["HTTP API", "Everything the UI does goes through /api/v1, so scripts can use it too."],
 ];
 
@@ -126,6 +133,27 @@ export default function AboutPage() {
         <p className="mt-3 text-xs">
           <Link href="/curate" className="underline">
             Open Curate →
+          </Link>
+        </p>
+      </Card>
+
+      <Card>
+        <CardTitle hint="turn sources into teaching material">Studio</CardTitle>
+        <ul className="space-y-2 text-sm">
+          {STUDIO.map(([name, detail]) => (
+            <li key={name} className="flex flex-col gap-0.5 sm:flex-row sm:gap-3">
+              <span className="w-40 shrink-0 font-medium">{name}</span>
+              <span className="text-muted">{detail}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-muted">
+          Pick sources explicitly, from a collection or with a search. Every lesson and deck point carries a [n]
+          citation; without a model the passages are selected and ordered, not invented.
+        </p>
+        <p className="mt-3 text-xs">
+          <Link href="/studio" className="underline">
+            Open Studio →
           </Link>
         </p>
       </Card>

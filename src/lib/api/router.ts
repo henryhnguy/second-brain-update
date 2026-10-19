@@ -32,6 +32,8 @@ import {
 } from "../db/repo/chat";
 import { createNote, deleteNote, getNote, listNotes, listTags, updateNote } from "../db/repo/notes";
 import { buildHealthReport, buildMasterIndex, distillDocument, listDistillTemplates } from "../curator";
+import { deleteArtifact, getArtifact, listArtifacts } from "../db/repo/artifacts";
+import { generateArtifact } from "../studio";
 import { createPlay, deletePlay, listPlayRuns, listPlays, updatePlay } from "../db/repo/plays";
 import {
   cancelJob,
@@ -357,6 +359,54 @@ export const ROUTES: Route[] = [
         })
         .parse(await context.json());
       return json(await distillDocument(body));
+    },
+  },
+  {
+    method: "GET",
+    pattern: "studio/artifacts",
+    handler: async (context) =>
+      json({
+        artifacts: listArtifacts({
+          kind: (context.query.get("kind") as "lesson" | "slides" | null) ?? null,
+          limit: numberParam(context.query.get("limit"), 30, 1, 200),
+        }),
+      }),
+  },
+  {
+    method: "GET",
+    pattern: "studio/artifacts/:id",
+    handler: async (_context, params) => {
+      const artifact = getArtifact(params.id as string);
+      if (!artifact) throw notFound("Artifact");
+      return json({ artifact });
+    },
+  },
+  {
+    method: "DELETE",
+    pattern: "studio/artifacts/:id",
+    handler: async (_context, params) => {
+      if (!deleteArtifact(params.id as string)) throw notFound("Artifact");
+      return json({ deleted: true });
+    },
+  },
+  {
+    method: "POST",
+    pattern: "studio/generate",
+    handler: async (context) => {
+      const body = z
+        .object({
+          kind: z.enum(["lesson", "slides"]),
+          documentIds: z.array(z.string()).optional(),
+          collectionId: z.string().nullable().optional(),
+          query: z.string().optional(),
+          limit: z.number().int().min(1).max(25).optional(),
+          maxSlides: z.number().int().min(4).max(20).optional(),
+          lang: z.enum(["en", "vi"]).optional(),
+          useLlm: z.boolean().optional(),
+          title: z.string().optional(),
+        })
+        .parse(await context.json());
+      return json(await generateArtifact(body), 201);
     },
   },
   {

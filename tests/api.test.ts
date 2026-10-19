@@ -104,6 +104,29 @@ describe("api router", () => {
     expect(payload.noteId).toBeTruthy();
   });
 
+  it("generates a studio deck and lists it", async () => {
+    const created = await call("POST", "ingest/text", {
+      body: {
+        text: "Backpart molding keeps the heel counter in shape. Always preheat the mold before loading the upper.",
+        title: "Molding notes",
+      },
+    });
+    const documentId = (created.body as { documentId: string }).documentId;
+
+    const generated = await call("POST", "studio/generate", {
+      body: { kind: "slides", documentIds: [documentId], useLlm: false, maxSlides: 6 },
+    });
+    expect(generated.status).toBe(201);
+    const artifact = generated.body as { id: string; kind: string; slides: unknown[] };
+    expect(artifact.kind).toBe("slides");
+    expect(artifact.slides.length).toBeGreaterThan(0);
+
+    const list = await call("GET", "studio/artifacts");
+    expect(list.status).toBe(200);
+    const ids = (list.body as { artifacts: { id: string }[] }).artifacts.map((entry) => entry.id);
+    expect(ids).toContain(artifact.id);
+  });
+
   it("stores document metadata used by the curator", async () => {
     const created = await call("POST", "ingest/text", {
       body: { text: "Product engineering guideline for the assembly line.", title: "MO - FTW.06" },

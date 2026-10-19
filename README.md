@@ -38,6 +38,14 @@ npm run dev          # http://localhost:4173
   available as an API, a CLI command and the monthly **Brain review** play
 - All three in one page at `/curate`
 
+**Teach from it**
+- **Studio**: pick sources and generate a **lesson** (objectives, core concepts, key terms, worked
+  example, quiz, flashcards) or a **slide deck** with speaker notes
+- Present the deck in the app with arrow keys; export it as Marp Markdown or a standalone HTML file
+- Grounded in your own documents with `[n]` citations; deterministic without a model, written by one
+  when configured
+- Reachable at `/studio` and from the CLI (`studio lesson|slides`)
+
 **Ask your memory**
 - RAG chat that answers only from retrieved passages and cites them as `[1]`, `[2]`
 - Token-by-token streaming, conversations kept in SQLite
@@ -88,6 +96,8 @@ Useful commands:
 | `npm run cli -- review` | Knowledge hygiene report (exit 1 when high issues exist) |
 | `npm run cli -- meta infer` | Fill `code`, `version`, `effectiveDate` from document titles |
 | `npm run cli -- ingest list manifest.json` | Import an explicit list of files (spreadsheet-driven onboarding) |
+| `npm run cli -- studio lesson --filter 01_Guidelines` | Build a lesson from a set of sources |
+| `npm run cli -- studio slides --docs id,id` | Build a slide deck from named documents |
 
 ---
 
@@ -155,6 +165,22 @@ the fallback, not a placeholder.
 
 ---
 
+## Teaching from memory
+
+**Studio** (`/studio`) turns a chosen set of sources into something you can teach or present with:
+
+- a **lesson** — learning objectives, core concepts per source, key terms, a worked example, a quiz
+  and flashcards, every point carrying a `[n]` citation;
+- a **slide deck** — title, agenda, one slide per source, takeaways and sources, with speaker notes —
+  presentable in the app (arrow keys, `Esc`) and exportable as Marp Markdown or a single HTML file.
+
+Sources can be named explicitly, resolved from a collection, or found with a search query. The
+deterministic path selects, orders and labels real passages; a configured model rewrites the artifact
+instead, and a failed model call falls back to the deterministic version. The full contract is in
+[docs/studio.md](docs/studio.md).
+
+---
+
 ## Your data stays yours
 
 - Everything lives under `data/`: `brain.db`, uploaded `files/`, `backups/`, worker `state/`,
@@ -179,6 +205,7 @@ src/
     connectors/            provider framework, OAuth plumbing, per-service providers
     crypto/                sealed storage for credentials
     curator/               memory map, one-pager distillation, hygiene review
+    studio/                lesson and slide-deck generation, deck export formats
     db/                    connection, migrations, repositories
     extract/               PDF, DOCX, HTML, EML, text extractors
     import/                mbox, ICS, RFC822, Notion and Slack export importers
@@ -194,7 +221,8 @@ scripts/                   smoke test
 
 Deeper reading: [docs/architecture.md](docs/architecture.md) ·
 [docs/api.md](docs/api.md) · [docs/connectors.md](docs/connectors.md) ·
-[docs/curator.md](docs/curator.md) · [docs/deployment.md](docs/deployment.md)
+[docs/curator.md](docs/curator.md) · [docs/studio.md](docs/studio.md) ·
+[docs/deployment.md](docs/deployment.md)
 
 ---
 

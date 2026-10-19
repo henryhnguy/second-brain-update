@@ -273,6 +273,30 @@ export type SyncRun = {
   detail: Record<string, unknown>;
 };
 
+export type ArtifactKind = "lesson" | "slides";
+
+export type ArtifactSlide = {
+  title: string;
+  subtitle?: string;
+  bullets: string[];
+  /** Speaker notes: what to say, and where the material came from. */
+  notes?: string;
+};
+
+export type Artifact = {
+  id: string;
+  kind: ArtifactKind;
+  title: string;
+  documentIds: string[];
+  params: Record<string, unknown>;
+  markdown: string;
+  slides: ArtifactSlide[];
+  citations: Citation[];
+  usedLlm: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type JobKind =
   | "ingest.file"
   | "ingest.url"

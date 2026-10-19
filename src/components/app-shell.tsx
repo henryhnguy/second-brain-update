@@ -20,6 +20,7 @@ const NAV = [
   { href: "/notes", label: "Notes", icon: "✎" },
   { href: "/library", label: "Library", icon: "▤" },
   { href: "/curate", label: "Curate", icon: "❖" },
+  { href: "/studio", label: "Studio", icon: "▦" },
   { href: "/search", label: "Search", icon: "⌕" },
   { href: "/chat", label: "Ask", icon: "✦" },
   { href: "/plays", label: "Automations", icon: "⚙" },

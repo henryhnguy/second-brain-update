@@ -16,6 +16,7 @@ export type IdPrefix =
   | "evt"
   | "play"
   | "run"
+  | "art"
   | "tok"
   | "ing";
 
