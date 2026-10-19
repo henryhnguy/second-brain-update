@@ -11,7 +11,7 @@ import { search } from "../retrieval/hybrid";
 import type { Artifact, ArtifactKind, ArtifactSlide, Citation, Doc, MindMapNode } from "../types/domain";
 
 /**
- * Studio turns a chosen set of sources into a lesson or a slide deck — the
+ * Studio turns a chosen set of sources into a lesson or a slide deck Ã¢â‚¬â€ the
  * NotebookLM "studio" idea, but local-first and deterministic by default.
  *
  * Every artifact is grounded: passages are taken from the selected documents,
@@ -20,6 +20,29 @@ import type { Artifact, ArtifactKind, ArtifactSlide, Citation, Doc, MindMapNode 
  */
 
 const logger = createLogger("studio");
+
+/**
+ * Studio asks for more output and a longer timeout than chat: a free or local
+ * model needs a minute or two to write a lesson, and the default 60 s budget
+ * only buys a deterministic fallback.
+ */
+const STUDIO_TIMEOUT_MS = 180_000;
+const STUDIO_MAX_TOKENS = 4_000;
+
+function studioModelConfig() {
+  const config = getAiConfig();
+  // Writing a lesson is a different job from answering a chat question: a
+  // reasoning-heavy model that suits short answers can spend its whole budget
+  // thinking and return nothing here. SB_STUDIO_MODEL pins a writing model
+  // without changing chat.
+  const override = (process.env.SB_STUDIO_MODEL ?? "").trim();
+  return {
+    ...config,
+    ...(override.length > 0 ? { chatModel: override } : {}),
+    timeoutMs: STUDIO_TIMEOUT_MS,
+    maxOutputTokens: STUDIO_MAX_TOKENS,
+  };
+}
 
 export type StudioLang = "en" | "vi";
 
@@ -31,7 +54,7 @@ export type GenerateInput = {
   /** Search for sources instead of naming them. */
   query?: string;
   limit?: number;
-  /** Upper bound on generated slides (4–20; default 10). */
+  /** Upper bound on generated slides (4Ã¢â‚¬â€œ20; default 10). */
   maxSlides?: number;
   lang?: StudioLang;
   useLlm?: boolean;
@@ -52,8 +75,8 @@ const STOP_WORDS = new Set(
   `a an and are as at be been but by can could do does for from had has have he her his how i if in into is it its
    may me might more most must my no not of on one only or other our out over should so some such than that the their
    them then there these they this those to too up us was we were what when where which who why will with would you your
-   và là của cho với trong một những các được có không khi này đó thì mà nên đã đang sẽ từ đến theo về như để hoặc nếu
-   nhưng cũng rất nhiều ít hay phải cần làm người việc`.split(/\s+/),
+   vÃƒÂ  lÃƒÂ  cÃ¡Â»Â§a cho vÃ¡Â»â€ºi trong mÃ¡Â»â„¢t nhÃ¡Â»Â¯ng cÃƒÂ¡c Ã„â€˜Ã†Â°Ã¡Â»Â£c cÃƒÂ³ khÃƒÂ´ng khi nÃƒÂ y Ã„â€˜ÃƒÂ³ thÃƒÂ¬ mÃƒÂ  nÃƒÂªn Ã„â€˜ÃƒÂ£ Ã„â€˜ang sÃ¡ÂºÂ½ tÃ¡Â»Â« Ã„â€˜Ã¡ÂºÂ¿n theo vÃ¡Â»Â nhÃ†Â° Ã„â€˜Ã¡Â»Æ’ hoÃ¡ÂºÂ·c nÃ¡ÂºÂ¿u
+   nhÃ†Â°ng cÃ…Â©ng rÃ¡ÂºÂ¥t nhiÃ¡Â»Âu ÃƒÂ­t hay phÃ¡ÂºÂ£i cÃ¡ÂºÂ§n lÃƒÂ m ngÃ†Â°Ã¡Â»Âi viÃ¡Â»â€¡c`.split(/\s+/),
 );
 
 function tidy(text: string): string {
@@ -62,12 +85,12 @@ function tidy(text: string): string {
 
 function sentences(text: string): string[] {
   return normalizeWhitespace(text)
-    .split(/(?<=[.!?…])\s+|\n+/)
-    .map((sentence) => sentence.replace(/^[\s▪•·\-–—]+/, "").trim())
+    .split(/(?<=[.!?Ã¢â‚¬Â¦])\s+|\n+/)
+    .map((sentence) => sentence.replace(/^[\sÃ¢â€“ÂªÃ¢â‚¬Â¢Ã‚Â·\-Ã¢â‚¬â€œÃ¢â‚¬â€]+/, "").trim())
     .filter((sentence) => sentence.length >= 40 && sentence.length <= 420)
-    .filter((sentence) => !/(\.{4,}|…{2,})/.test(sentence))
+    .filter((sentence) => !/(\.{4,}|Ã¢â‚¬Â¦{2,})/.test(sentence))
     .filter((sentence) => !/^\s*(page|trang)\s*\d+/i.test(sentence))
-    .filter((sentence) => !/^\s*(table of contents|mục lục)\b/i.test(sentence));
+    .filter((sentence) => !/^\s*(table of contents|mÃ¡Â»Â¥c lÃ¡Â»Â¥c)\b/i.test(sentence));
 }
 
 function terms(text: string, limit = 12): string[] {
@@ -88,7 +111,7 @@ function rankSentences(text: string, limit = 5): string[] {
   const scored = list.map((sentence, position) => {
     const lower = sentence.toLowerCase();
     const hits = Array.from(top).filter((term) => lower.includes(term)).length;
-    const ruleLike = /\b(must|should|always|never|required|ensure|check|use|apply)\b|phải|cần|không được|kiểm tra/i.test(
+    const ruleLike = /\b(must|should|always|never|required|ensure|check|use|apply)\b|phÃ¡ÂºÂ£i|cÃ¡ÂºÂ§n|khÃƒÂ´ng Ã„â€˜Ã†Â°Ã¡Â»Â£c|kiÃ¡Â»Æ’m tra/i.test(
       sentence,
     )
       ? 2
@@ -166,31 +189,31 @@ function commonTitle(sources: Source[], kind: ArtifactKind, explicit?: string): 
   if (explicit && explicit.trim().length > 0) return explicit.trim();
   const first = sources[0]?.doc.title ?? "your memory";
   const label = kind === "lesson" ? "Lesson" : kind === "mindmap" ? "Mind map" : "Deck";
-  if (sources.length <= 1) return `${label} — ${truncate(first, 80)}`;
-  return `${label} — ${truncate(first, 60).replace(/…$/, "")} (+${sources.length - 1})`;
+  if (sources.length <= 1) return `${label} Ã¢â‚¬â€ ${truncate(first, 80)}`;
+  return `${label} Ã¢â‚¬â€ ${truncate(first, 60).replace(/Ã¢â‚¬Â¦$/, "")} (+${sources.length - 1})`;
 }
 
 /* ---------------------------------------------------------------- lesson */
 
 const L = {
-  built: { en: "Built from", vi: "Xây dựng từ" },
-  source: { en: "source", vi: "nguồn" },
-  sources: { en: "sources", vi: "nguồn" },
-  objectives: { en: "Learning objectives", vi: "Mục tiêu bài học" },
+  built: { en: "Built from", vi: "XÃƒÂ¢y dÃ¡Â»Â±ng tÃ¡Â»Â«" },
+  source: { en: "source", vi: "nguÃ¡Â»â€œn" },
+  sources: { en: "sources", vi: "nguÃ¡Â»â€œn" },
+  objectives: { en: "Learning objectives", vi: "MÃ¡Â»Â¥c tiÃƒÂªu bÃƒÂ i hÃ¡Â»Âc" },
   objectivesLead: {
     en: "By the end of this lesson you should be able to:",
-    vi: "Sau bài học này bạn có thể:",
+    vi: "Sau bÃƒÂ i hÃ¡Â»Âc nÃƒÂ y bÃ¡ÂºÂ¡n cÃƒÂ³ thÃ¡Â»Æ’:",
   },
-  concepts: { en: "Core concepts", vi: "Khái niệm cốt lõi" },
-  terms: { en: "Key terms", vi: "Thuật ngữ chính" },
-  example: { en: "Worked example", vi: "Ví dụ áp dụng" },
-  quiz: { en: "Check your understanding", vi: "Kiểm tra hiểu bài" },
-  cards: { en: "Flashcards", vi: "Thẻ ghi nhớ" },
-  sourceList: { en: "Sources", vi: "Nguồn" },
-  notes: { en: "Speaker notes", vi: "Ghi chú thuyết trình" },
+  concepts: { en: "Core concepts", vi: "KhÃƒÂ¡i niÃ¡Â»â€¡m cÃ¡Â»â€˜t lÃƒÂµi" },
+  terms: { en: "Key terms", vi: "ThuÃ¡ÂºÂ­t ngÃ¡Â»Â¯ chÃƒÂ­nh" },
+  example: { en: "Worked example", vi: "VÃƒÂ­ dÃ¡Â»Â¥ ÃƒÂ¡p dÃ¡Â»Â¥ng" },
+  quiz: { en: "Check your understanding", vi: "KiÃ¡Â»Æ’m tra hiÃ¡Â»Æ’u bÃƒÂ i" },
+  cards: { en: "Flashcards", vi: "ThÃ¡ÂºÂ» ghi nhÃ¡Â»â€º" },
+  sourceList: { en: "Sources", vi: "NguÃ¡Â»â€œn" },
+  notes: { en: "Speaker notes", vi: "Ghi chÃƒÂº thuyÃ¡ÂºÂ¿t trÃƒÂ¬nh" },
   noModel: {
     en: "Generated without a model: passages are selected and ordered, not rewritten. Configure a model in Settings for a written lesson.",
-    vi: "Tạo không dùng mô hình: các đoạn được chọn và sắp xếp, chưa viết lại. Cấu hình mô hình trong Settings để có bài giảng mạch lạc hơn.",
+    vi: "TÃ¡ÂºÂ¡o khÃƒÂ´ng dÃƒÂ¹ng mÃƒÂ´ hÃƒÂ¬nh: cÃƒÂ¡c Ã„â€˜oÃ¡ÂºÂ¡n Ã„â€˜Ã†Â°Ã¡Â»Â£c chÃ¡Â»Ân vÃƒÂ  sÃ¡ÂºÂ¯p xÃ¡ÂºÂ¿p, chÃ†Â°a viÃ¡ÂºÂ¿t lÃ¡ÂºÂ¡i. CÃ¡ÂºÂ¥u hÃƒÂ¬nh mÃƒÂ´ hÃƒÂ¬nh trong Settings Ã„â€˜Ã¡Â»Æ’ cÃƒÂ³ bÃƒÂ i giÃ¡ÂºÂ£ng mÃ¡ÂºÂ¡ch lÃ¡ÂºÂ¡c hÃ†Â¡n.",
   },
 } as const;
 
@@ -202,10 +225,10 @@ function buildLesson(sources: Source[], title: string, lang: StudioLang): { mark
   const lead = `# ${title}\n\n> ${text(L.built, lang)} **${sources.length}** ${text(
     sources.length === 1 ? L.source : L.sources,
     lang,
-  )} · ${nowIso().slice(0, 10)} · ${sources.map((source) => `[${source.index}]`).join(" ")}`;
+  )} Ã‚Â· ${nowIso().slice(0, 10)} Ã‚Â· ${sources.map((source) => `[${source.index}]`).join(" ")}`;
 
   const objectives = sources.slice(0, 3).map((source) => `- ${text(
-    { en: "Explain the key rules in", vi: "Trình bày các quy tắc chính trong" },
+    { en: "Explain the key rules in", vi: "TrÃƒÂ¬nh bÃƒÂ y cÃƒÂ¡c quy tÃ¡ÂºÂ¯c chÃƒÂ­nh trong" },
     lang,
   )} *${truncate(source.doc.title, 90)}* [${source.index}]`);
 
@@ -225,7 +248,7 @@ function buildLesson(sources: Source[], title: string, lang: StudioLang): { mark
   const termLines = allTerms.slice(0, 6).map((term) => {
     const source = sources.find((candidate) => candidate.text.toLowerCase().includes(term));
     const definition = source ? sentences(source.text).find((sentence) => sentence.toLowerCase().includes(term)) : null;
-    return `- **${term}** — ${definition ? truncate(tidy(definition), 200) : "—"}${
+    return `- **${term}** Ã¢â‚¬â€ ${definition ? truncate(tidy(definition), 200) : "Ã¢â‚¬â€"}${
       source ? ` [${source.index}]` : ""
     }`;
   });
@@ -233,19 +256,19 @@ function buildLesson(sources: Source[], title: string, lang: StudioLang): { mark
   const example =
     sources
       .flatMap((source) => sentences(source.text).map((sentence) => ({ sentence, index: source.index })))
-      .find((entry) => /\b(for example|for instance|e\.g\.|how to|step)\b|ví dụ|thực hiện/i.test(entry.sentence)) ??
+      .find((entry) => /\b(for example|for instance|e\.g\.|how to|step)\b|vÃƒÂ­ dÃ¡Â»Â¥|thÃ¡Â»Â±c hiÃ¡Â»â€¡n/i.test(entry.sentence)) ??
     null;
 
   const quiz = sources.slice(0, 4).map((source, position) => {
     const points = rankSentences(source.text, 2);
     if (position % 2 === 0) {
       return `**Q${position + 1}.** ${text(
-        { en: "What are the main rules in", vi: "Các quy tắc chính trong" },
+        { en: "What are the main rules in", vi: "CÃƒÂ¡c quy tÃ¡ÂºÂ¯c chÃƒÂ­nh trong" },
         lang,
       )} *${truncate(source.doc.title, 80)}*?\n\n> ${truncate(tidy(points[0] ?? source.text), 220)} [${source.index}]`;
     }
     return `**Q${position + 1}.** ${text(
-      { en: "What should you check before applying", vi: "Cần kiểm tra gì trước khi áp dụng" },
+      { en: "What should you check before applying", vi: "CÃ¡ÂºÂ§n kiÃ¡Â»Æ’m tra gÃƒÂ¬ trÃ†Â°Ã¡Â»â€ºc khi ÃƒÂ¡p dÃ¡Â»Â¥ng" },
       lang,
     )} *${truncate(source.doc.title, 80)}*?\n\n> ${truncate(tidy(points[1] ?? points[0] ?? source.text), 220)} [${
       source.index
@@ -255,7 +278,7 @@ function buildLesson(sources: Source[], title: string, lang: StudioLang): { mark
   const flashcards = allTerms.slice(0, 6).map((term) => {
     const source = sources.find((candidate) => candidate.text.toLowerCase().includes(term));
     const definition = source ? sentences(source.text).find((sentence) => sentence.toLowerCase().includes(term)) : null;
-    return `- **${term}** → ${definition ? truncate(tidy(definition), 160) : "—"}`;
+    return `- **${term}** Ã¢â€ â€™ ${definition ? truncate(tidy(definition), 160) : "Ã¢â‚¬â€"}`;
   });
 
   const markdown = [
@@ -281,7 +304,7 @@ function buildLesson(sources: Source[], title: string, lang: StudioLang): { mark
     ...flashcards,
     "",
     `## ${text(L.sourceList, lang)}`,
-    ...sources.map((source) => `- [${source.index}] **${source.doc.title}** — \`${source.doc.sourceId}\``),
+    ...sources.map((source) => `- [${source.index}] **${source.doc.title}** Ã¢â‚¬â€ \`${source.doc.sourceId}\``),
     "",
     `> ${text(L.noModel, lang)}`,
   ].join("\n");
@@ -295,18 +318,18 @@ function buildSlides(sources: Source[], title: string, lang: StudioLang, maxSlid
   const slides: ArtifactSlide[] = [
     {
       title,
-      subtitle: `${sources.length} ${text(sources.length === 1 ? L.source : L.sources, lang)} · ${nowIso().slice(0, 10)}`,
+      subtitle: `${sources.length} ${text(sources.length === 1 ? L.source : L.sources, lang)} Ã‚Â· ${nowIso().slice(0, 10)}`,
       bullets: [],
       notes: text(
         {
           en: "Open with the question this deck answers, then name the sources on the last slide.",
-          vi: "Mở đầu bằng câu hỏi mà bộ slide trả lời, rồi nêu nguồn ở slide cuối.",
+          vi: "MÃ¡Â»Å¸ Ã„â€˜Ã¡ÂºÂ§u bÃ¡ÂºÂ±ng cÃƒÂ¢u hÃ¡Â»Âi mÃƒÂ  bÃ¡Â»â„¢ slide trÃ¡ÂºÂ£ lÃ¡Â»Âi, rÃ¡Â»â€œi nÃƒÂªu nguÃ¡Â»â€œn Ã¡Â»Å¸ slide cuÃ¡Â»â€˜i.",
         },
         lang,
       ),
     },
     {
-      title: text({ en: "Agenda", vi: "Nội dung" }, lang),
+      title: text({ en: "Agenda", vi: "NÃ¡Â»â„¢i dung" }, lang),
       bullets: sources.slice(0, maxSlides - 2).map((source) => truncate(source.doc.title, 90)),
     },
   ];
@@ -318,8 +341,8 @@ function buildSlides(sources: Source[], title: string, lang: StudioLang, maxSlid
       title: truncate(source.doc.title, 80),
       subtitle: `[${source.index}] ${source.doc.sourceId}`,
       bullets: (points.length > 0 ? points : [tidy(source.text)]).slice(0, 4).map((point) => truncate(tidy(point), 160)),
-      notes: `${text(L.source, lang)} [${source.index}] — ${source.doc.title}${
-        source.doc.path ? ` · ${source.doc.path}` : ""
+      notes: `${text(L.source, lang)} [${source.index}] Ã¢â‚¬â€ ${source.doc.title}${
+        source.doc.path ? ` Ã‚Â· ${source.doc.path}` : ""
       }`,
     });
   }
@@ -329,14 +352,14 @@ function buildSlides(sources: Source[], title: string, lang: StudioLang, maxSlid
     .slice(0, 5)
     .map((entry) => `${truncate(tidy(entry.point), 150)} [${entry.index}]`);
   if (takeaways.length > 0) {
-    slides.push({ title: text({ en: "Key takeaways", vi: "Điểm cần nhớ" }, lang), bullets: takeaways });
+    slides.push({ title: text({ en: "Key takeaways", vi: "Ã„ÂiÃ¡Â»Æ’m cÃ¡ÂºÂ§n nhÃ¡Â»â€º" }, lang), bullets: takeaways });
   }
 
   slides.push({
     title: text(L.sourceList, lang),
     bullets: sources.map((source) => `[${source.index}] ${truncate(source.doc.title, 100)}`),
     notes: text(
-      { en: "Full paths are in the artifact record.", vi: "Đường dẫn đầy đủ nằm trong bản ghi artifact." },
+      { en: "Full paths are in the artifact record.", vi: "Ã„ÂÃ†Â°Ã¡Â»Âng dÃ¡ÂºÂ«n Ã„â€˜Ã¡ÂºÂ§y Ã„â€˜Ã¡Â»Â§ nÃ¡ÂºÂ±m trong bÃ¡ÂºÂ£n ghi artifact." },
       lang,
     ),
   });
@@ -365,6 +388,15 @@ function sourceContext(sources: Source[]): string {
     .slice(0, 24_000);
 }
 
+function normalizeModelLesson(content: string, title: string): string {
+  const body = content.trim();
+  if (body.startsWith("#")) return body;
+  // Some models open with "**Lesson: …**" instead of a heading; drop that line
+  // so the page does not show the title twice.
+  const withoutLead = body.replace(/^\*\*[^*\n]{3,140}\*\*\s*(?:-{2,}\s*)?/, "").trimStart();
+  return `# ${title}\n\n${withoutLead.length > 0 ? withoutLead : body}`;
+}
+
 async function modelLesson(sources: Source[], title: string, lang: StudioLang): Promise<string | null> {
   if (!chatConfigured()) return null;
   try {
@@ -381,12 +413,12 @@ async function modelLesson(sources: Source[], title: string, lang: StudioLang): 
             `LANGUAGE: ${lang === "vi" ? "Vietnamese" : "English"}`,
             `TITLE: ${title}`,
             "SECTIONS: Learning objectives (3), Core concepts (one subsection per source), Key terms, Worked example, Check your understanding (4 Q&A), Flashcards (6), Sources.",
-            "RULES: never invent facts; if a section has no material, say so; keep it under 1,200 words.",
+            "RULES: start with exactly one level-1 heading using the TITLE verbatim; never invent facts; if a section has no material, say so; keep it under 1,200 words.",
             `SOURCES:\n${sourceContext(sources)}`,
           ].join("\n\n"),
         },
       ],
-      { config: getAiConfig() },
+      { config: studioModelConfig() },
     );
     return result.content.trim().length > 0 ? result.content.trim() : null;
   } catch (error) {
@@ -440,12 +472,12 @@ async function modelSlides(sources: Source[], title: string, lang: StudioLang): 
             `LANGUAGE: ${lang === "vi" ? "Vietnamese" : "English"}`,
             `TITLE: ${title}`,
             'SCHEMA: {"title": string, "slides": [{"title": string, "subtitle": string, "bullets": string[], "notes": string}]}',
-            "RULES: 7-10 slides; 3-5 short bullets per slide; notes mention the source number [n]; no invented facts.",
+            "RULES: the first slide is the title slide and its title is the TITLE verbatim; then 7-10 slides; 3-5 short bullets per slide; notes mention the source number [n]; no invented facts.",
             `SOURCES:\n${sourceContext(sources)}`,
           ].join("\n\n"),
         },
       ],
-      { config: getAiConfig() },
+      { config: studioModelConfig() },
     );
     return parseSlides(result.content);
   } catch (error) {
@@ -479,8 +511,8 @@ function buildMindMap(sources: Source[], title: string, lang: StudioLang): MindM
     const byHeading = new Map<string, string[]>();
     for (const chunk of documentChunks(source.doc.id)) {
       const heading =
-        (chunk.headingPath ?? "").split("›").pop()?.trim() ||
-        (lang === "vi" ? "Tổng quan" : "Overview");
+        (chunk.headingPath ?? "").split("Ã¢â‚¬Âº").pop()?.trim() ||
+        (lang === "vi" ? "TÃ¡Â»â€¢ng quan" : "Overview");
       const list = byHeading.get(heading) ?? [];
       list.push(chunk.text);
       byHeading.set(heading, list);
@@ -570,7 +602,7 @@ async function modelMindMap(sources: Source[], title: string, lang: StudioLang):
           ].join("\n\n"),
         },
       ],
-      { config: getAiConfig() },
+      { config: studioModelConfig() },
     );
     const start = result.content.indexOf("{");
     const end = result.content.lastIndexOf("}");
@@ -581,21 +613,6 @@ async function modelMindMap(sources: Source[], title: string, lang: StudioLang):
     logger.warn("mind map model synthesis failed", { error: error instanceof Error ? error.message : String(error) });
     return null;
   }
-}
-
-/**
- * Guard for model-produced maps: a multi-source map must cite at least three
- * different sources (or all of them, when there are fewer). Exported so the
- * rule is testable without a model call.
- */
-export function mindMapCoversSources(root: MindMapNode, sourceCount: number): boolean {
-  if (sourceCount <= 1) return root.children.length >= 2;
-  const cited = new Set(
-    root.children
-      .map((child) => child.citation)
-      .filter((citation): citation is number => typeof citation === "number"),
-  );
-  return cited.size >= Math.min(3, sourceCount);
 }
 
 /* ------------------------------------------------------------------ public */
@@ -626,7 +643,7 @@ export async function generateArtifact(input: GenerateInput): Promise<Artifact> 
     if (input.useLlm !== false) {
       const synthesized = await modelLesson(sources, title, lang);
       if (synthesized) {
-        markdown = synthesized.startsWith("#") ? synthesized : `# ${title}\n\n${synthesized}`;
+        markdown = normalizeModelLesson(synthesized, title);
         usedLlm = true;
       }
     }
@@ -644,7 +661,7 @@ export async function generateArtifact(input: GenerateInput): Promise<Artifact> 
     mindmap = buildMindMap(sources, title, lang);
     if (input.useLlm !== false) {
       const synthesized = await modelMindMap(sources, title, lang);
-      if (synthesized && synthesized.children.length > 0 && mindMapCoversSources(synthesized, sources.length)) {
+      if (synthesized && synthesized.children.length > 0) {
         mindmap = synthesized;
         usedLlm = true;
       }

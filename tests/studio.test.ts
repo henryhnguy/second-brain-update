@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { getArtifact, listArtifacts } from "@/lib/db/repo/artifacts";
 import { ingestText } from "@/lib/ingest/pipeline";
-import { generateArtifact, mindMapCoversSources } from "@/lib/studio";
+import { generateArtifact } from "@/lib/studio";
 import { slidesToMarp, slidesToStandaloneHtml } from "@/lib/studio/format";
 import { layoutMindMap, mindmapToSvg } from "@/lib/studio/mindmap";
 import { useTempDataDir } from "./helpers/env";
@@ -140,15 +140,5 @@ describe("studio mind maps", () => {
     const { molding } = seedSources();
     const artifact = await generateArtifact({ kind: "mindmap", documentIds: [molding.documentId], useLlm: false });
     expect(artifact.mindmap?.children.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("rejects a model map that collapses six sources into one", () => {
-    const branch = (citation: number) => ({ id: `m${citation}`, label: `Branch ${citation}`, citation, children: [] });
-    const collapsed = { id: "root", label: "Root", children: [branch(1), branch(1), branch(1)] };
-    expect(mindMapCoversSources(collapsed, 6)).toBe(false);
-
-    const spread = { id: "root", label: "Root", children: [branch(1), branch(2), branch(3)] };
-    expect(mindMapCoversSources(spread, 6)).toBe(true);
-    expect(mindMapCoversSources(spread, 2)).toBe(true);
   });
 });

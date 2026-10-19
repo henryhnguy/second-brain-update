@@ -93,6 +93,13 @@ function tags(value: string | boolean | undefined): string[] {
 }
 
 async function main(): Promise<number> {
+  // Next loads .env for the server; the CLI runs outside it, so load the same
+  // file here (SB_STUDIO_MODEL, SB_DATA_DIR, provider settings).
+  try {
+    process.loadEnvFile();
+  } catch {
+    /* no .env in this directory */
+  }
   const args = parseArgs(process.argv.slice(2));
   const [command, sub] = args._;
 
