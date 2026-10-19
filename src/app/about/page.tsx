@@ -36,8 +36,9 @@ const CURATE = [
 const STUDIO = [
   ["Lesson", "Objectives, core concepts, key terms, a worked example, a quiz and flashcards."],
   ["Deck", "Title, agenda, one slide per source, takeaways and sources, with speaker notes."],
+  ["Mind map", "A branch per source or heading, with cited leaves; zoomable and exportable as SVG."],
   ["Present", "Arrow keys, Esc, notes toggle and a full-screen mode in the app."],
-  ["Export", "Marp Markdown for deck tools, or one standalone HTML file with no dependencies."],
+  ["Export", "Marp Markdown, a standalone HTML deck, or a self-contained SVG."],
 ];
 
 const ASK = [

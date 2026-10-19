@@ -42,6 +42,8 @@ npm run dev          # http://localhost:4173
 - **Studio**: pick sources and generate a **lesson** (objectives, core concepts, key terms, worked
   example, quiz, flashcards) or a **slide deck** with speaker notes
 - Present the deck in the app with arrow keys; export it as Marp Markdown or a standalone HTML file
+- **Mind maps**: one branch per source (or per heading for a single document), zoomable in the app and
+  exportable as a self-contained SVG
 - Grounded in your own documents with `[n]` citations; deterministic without a model, written by one
   when configured
 - Reachable at `/studio` and from the CLI (`studio lesson|slides`)
@@ -98,6 +100,7 @@ Useful commands:
 | `npm run cli -- ingest list manifest.json` | Import an explicit list of files (spreadsheet-driven onboarding) |
 | `npm run cli -- studio lesson --filter 01_Guidelines` | Build a lesson from a set of sources |
 | `npm run cli -- studio slides --docs id,id` | Build a slide deck from named documents |
+| `npm run cli -- studio mindmap --filter 01_Guidelines` | Build a mind map from a set of sources |
 
 ---
 
@@ -172,7 +175,9 @@ the fallback, not a placeholder.
 - a **lesson** — learning objectives, core concepts per source, key terms, a worked example, a quiz
   and flashcards, every point carrying a `[n]` citation;
 - a **slide deck** — title, agenda, one slide per source, takeaways and sources, with speaker notes —
-  presentable in the app (arrow keys, `Esc`) and exportable as Marp Markdown or a single HTML file.
+  presentable in the app (arrow keys, `Esc`) and exportable as Marp Markdown or a single HTML file;
+- a **mind map** — a branch per source (or per heading for one document) with cited leaves, zoomable
+  in the app and exportable as a standalone SVG.
 
 Sources can be named explicitly, resolved from a collection, or found with a search query. The
 deterministic path selects, orders and labels real passages; a configured model rewrites the artifact

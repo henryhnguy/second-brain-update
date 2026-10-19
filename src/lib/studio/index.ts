@@ -8,7 +8,7 @@ import { createArtifact } from "../db/repo/artifacts";
 import { collectionDocumentIds } from "../db/repo/collections";
 import { documentChunks, getDocument, listDocuments } from "../db/repo/documents";
 import { search } from "../retrieval/hybrid";
-import type { Artifact, ArtifactKind, ArtifactSlide, Citation, Doc } from "../types/domain";
+import type { Artifact, ArtifactKind, ArtifactSlide, Citation, Doc, MindMapNode } from "../types/domain";
 
 /**
  * Studio turns a chosen set of sources into a lesson or a slide deck — the
@@ -165,9 +165,9 @@ function collectSources(docs: Doc[]): Source[] {
 function commonTitle(sources: Source[], kind: ArtifactKind, explicit?: string): string {
   if (explicit && explicit.trim().length > 0) return explicit.trim();
   const first = sources[0]?.doc.title ?? "your memory";
-  const label = kind === "lesson" ? "Lesson" : "Deck";
+  const label = kind === "lesson" ? "Lesson" : kind === "mindmap" ? "Mind map" : "Deck";
   if (sources.length <= 1) return `${label} — ${truncate(first, 80)}`;
-  return `${label} — ${truncate(first, 60)} (+${sources.length - 1})`;
+  return `${label} — ${truncate(first, 60).replace(/…$/, "")} (+${sources.length - 1})`;
 }
 
 /* ---------------------------------------------------------------- lesson */
@@ -454,10 +454,156 @@ async function modelSlides(sources: Source[], title: string, lang: StudioLang): 
   }
 }
 
+/* ---------------------------------------------------------------- mind map */
+
+function leafNodes(points: string[], sourceIndex: number, prefix: string): MindMapNode[] {
+  return points.map((point, position) => ({
+    id: `${prefix}-${position + 1}`,
+    label: truncate(tidy(point), 72),
+    detail: tidy(point),
+    citation: sourceIndex,
+    children: [],
+  }));
+}
+
+/**
+ * One source is mapped by its own headings; several sources become one branch
+ * each. Both keep the map at two levels under the root, which is what reads
+ * well on a slide and in the exported SVG.
+ */
+function buildMindMap(sources: Source[], title: string, lang: StudioLang): MindMapNode {
+  const root: MindMapNode = { id: "root", label: truncate(title, 70), children: [] };
+
+  if (sources.length === 1) {
+    const source = sources[0] as Source;
+    const byHeading = new Map<string, string[]>();
+    for (const chunk of documentChunks(source.doc.id)) {
+      const heading =
+        (chunk.headingPath ?? "").split("›").pop()?.trim() ||
+        (lang === "vi" ? "Tổng quan" : "Overview");
+      const list = byHeading.get(heading) ?? [];
+      list.push(chunk.text);
+      byHeading.set(heading, list);
+    }
+    let branch = 0;
+    for (const [heading, texts] of byHeading) {
+      if (branch >= 7) break;
+      const points = rankSentences(texts.join("\n"), 4);
+      if (points.length === 0) continue;
+      branch += 1;
+      root.children.push({
+        id: `m${branch}`,
+        label: truncate(heading, 64),
+        citation: source.index,
+        children: leafNodes(points, source.index, `m${branch}`),
+      });
+    }
+  }
+
+  if (root.children.length === 0) {
+    sources.slice(0, 7).forEach((source, position) => {
+      const points = rankSentences(source.text, 4);
+      if (points.length === 0) return;
+      root.children.push({
+        id: `m${position + 1}`,
+        label: truncate(source.doc.title, 64),
+        citation: source.index,
+        children: leafNodes(points, source.index, `m${position + 1}`),
+      });
+    });
+  }
+
+  return root;
+}
+
+function mindmapMarkdown(root: MindMapNode): string {
+  const lines = [`# ${root.label}`, ""];
+  const walk = (node: MindMapNode, depth: number) => {
+    lines.push(`${"  ".repeat(depth)}- ${node.label}${node.citation ? ` [${node.citation}]` : ""}`);
+    for (const child of node.children) walk(child, depth + 1);
+  };
+  for (const child of root.children) walk(child, 0);
+  return lines.join("\n");
+}
+
+function sanitizeMindMap(value: unknown, sources: Source[], depth = 0, counter = { value: 0 }): MindMapNode | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const label = typeof record.label === "string" ? tidy(record.label) : "";
+  if (label.length === 0) return null;
+  counter.value += 1;
+  const citationRaw = Number(record.citation);
+  const citation =
+    Number.isInteger(citationRaw) && citationRaw >= 1 && citationRaw <= sources.length ? citationRaw : undefined;
+  const node: MindMapNode = {
+    id: `m${counter.value}`,
+    label: truncate(label, 72),
+    ...(citation ? { citation } : {}),
+    children: [],
+  };
+  if (depth < 2 && Array.isArray(record.children)) {
+    for (const child of record.children.slice(0, 6)) {
+      const parsed = sanitizeMindMap(child, sources, depth + 1, counter);
+      if (parsed) node.children.push(parsed);
+    }
+  }
+  return node;
+}
+
+async function modelMindMap(sources: Source[], title: string, lang: StudioLang): Promise<MindMapNode | null> {
+  if (!chatConfigured()) return null;
+  try {
+    const result = await chatComplete(
+      [
+        {
+          role: "system",
+          content: "You build mind maps from source material. Reply with JSON only, no prose and no code fence.",
+        },
+        {
+          role: "user",
+          content: [
+            `LANGUAGE: ${lang === "vi" ? "Vietnamese" : "English"}`,
+            `TITLE: ${title}`,
+            'SCHEMA: {"label": string, "children": [{"label": string, "citation": number, "children": [{"label": string, "citation": number}]}]}',
+            "RULES: exactly one branch per SOURCE, in the order given, labelled with that document's title; 3-5 leaves per branch; every branch and leaf cites its [n]; no merging sources, no invented facts.",
+            `SOURCES:\n${sourceContext(sources)}`,
+          ].join("\n\n"),
+        },
+      ],
+      { config: getAiConfig() },
+    );
+    const start = result.content.indexOf("{");
+    const end = result.content.lastIndexOf("}");
+    if (start === -1 || end <= start) return null;
+    const parsed = JSON.parse(result.content.slice(start, end + 1)) as unknown;
+    return sanitizeMindMap(parsed, sources);
+  } catch (error) {
+    logger.warn("mind map model synthesis failed", { error: error instanceof Error ? error.message : String(error) });
+    return null;
+  }
+}
+
+/**
+ * Guard for model-produced maps: a multi-source map must cite at least three
+ * different sources (or all of them, when there are fewer). Exported so the
+ * rule is testable without a model call.
+ */
+export function mindMapCoversSources(root: MindMapNode, sourceCount: number): boolean {
+  if (sourceCount <= 1) return root.children.length >= 2;
+  const cited = new Set(
+    root.children
+      .map((child) => child.citation)
+      .filter((citation): citation is number => typeof citation === "number"),
+  );
+  return cited.size >= Math.min(3, sourceCount);
+}
+
 /* ------------------------------------------------------------------ public */
 
 export async function generateArtifact(input: GenerateInput): Promise<Artifact> {
-  if (input.kind !== "lesson" && input.kind !== "slides") throw badRequest(`Unknown artifact kind: ${input.kind}`);
+  if (input.kind !== "lesson" && input.kind !== "slides" && input.kind !== "mindmap") {
+    throw badRequest(`Unknown artifact kind: ${input.kind}`);
+  }
   const docs = await resolveDocuments(input);
   if (docs.length === 0) {
     throw badRequest("No sources matched. Select at least one document, collection or query.");
@@ -471,6 +617,7 @@ export async function generateArtifact(input: GenerateInput): Promise<Artifact> 
 
   let markdown = "";
   let slides: ArtifactSlide[] = [];
+  let mindmap: MindMapNode | null = null;
   let usedLlm = false;
 
   if (input.kind === "lesson") {
@@ -483,7 +630,7 @@ export async function generateArtifact(input: GenerateInput): Promise<Artifact> 
         usedLlm = true;
       }
     }
-  } else {
+  } else if (input.kind === "slides") {
     slides = buildSlides(sources, title, lang, maxSlides);
     if (input.useLlm !== false) {
       const synthesized = await modelSlides(sources, title, lang);
@@ -493,6 +640,16 @@ export async function generateArtifact(input: GenerateInput): Promise<Artifact> 
       }
     }
     markdown = slidesMarkdown(slides, title);
+  } else {
+    mindmap = buildMindMap(sources, title, lang);
+    if (input.useLlm !== false) {
+      const synthesized = await modelMindMap(sources, title, lang);
+      if (synthesized && synthesized.children.length > 0 && mindMapCoversSources(synthesized, sources.length)) {
+        mindmap = synthesized;
+        usedLlm = true;
+      }
+    }
+    markdown = mindmapMarkdown(mindmap);
   }
 
   return createArtifact({
@@ -508,6 +665,7 @@ export async function generateArtifact(input: GenerateInput): Promise<Artifact> 
     },
     markdown,
     slides,
+    mindmap,
     citations,
     usedLlm,
   });

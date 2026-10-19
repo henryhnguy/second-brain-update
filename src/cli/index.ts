@@ -13,7 +13,7 @@
  *   review [--days N] [--json]    knowledge hygiene report
  *   distill <id>|--filter <path>  one-pagers, single or batch
  *   meta infer [--dry-run]        infer code/version/date from titles
- *   studio lesson|slides          build a lesson or a slide deck from sources
+ *   studio lesson|slides|mindmap  build teaching material from sources
  *   export [--out file.json] [--limit N]
  *   jobs [--process N]
  *   doctor                        capabilities, data paths, embedding coverage
@@ -46,6 +46,7 @@ import { applyInferredMetadata } from "../lib/curator/metadata";
 import { getArtifact, listArtifacts } from "../lib/db/repo/artifacts";
 import { generateArtifact } from "../lib/studio";
 import { slidesToMarp } from "../lib/studio/format";
+import { mindmapToSvg } from "../lib/studio/mindmap";
 import type { DistillTemplateId } from "../lib/curator";
 import { search } from "../lib/retrieval/hybrid";
 import { getImporterFor } from "../lib/import";
@@ -113,7 +114,7 @@ async function main(): Promise<number> {
           "  review [--days N] [--json]    knowledge hygiene report",
           "  distill <documentId>|--filter <path> [--template generic|guideline|project|meeting|decision] [--lang en|vi] [--preview]",
           "  meta infer [--dry-run] [--overwrite]   infer code/version/date from titles",
-          "  studio lesson|slides [--docs id,id | --filter path | --query q] [--limit N] [--max-slides N] [--lang en|vi] [--no-llm]",
+          "  studio lesson|slides|mindmap [--docs id,id | --filter path | --query q] [--limit N] [--max-slides N] [--lang en|vi] [--no-llm]",
           "  studio list | studio show <id> | studio export <id> [--out file]",
           "  export [--out file.json] [--limit N]",
           "  jobs [--process N]",
@@ -504,7 +505,12 @@ async function main(): Promise<number> {
             console.error("usage: studio export <artifactId> --out <file>");
             return 2;
           }
-          const content = artifact.kind === "slides" ? slidesToMarp(artifact.slides, artifact.title) : artifact.markdown;
+          const content =
+            artifact.kind === "slides"
+              ? slidesToMarp(artifact.slides, artifact.title)
+              : artifact.kind === "mindmap" && artifact.mindmap
+                ? mindmapToSvg(artifact.mindmap, artifact.title)
+                : artifact.markdown;
           fs.writeFileSync(args.flags.out, content, "utf8");
           console.log(`Wrote ${artifact.kind} to ${args.flags.out}`);
           return 0;
@@ -514,7 +520,7 @@ async function main(): Promise<number> {
         return 0;
       }
 
-      if (sub === "lesson" || sub === "slides") {
+      if (sub === "lesson" || sub === "slides" || sub === "mindmap") {
         const docs = typeof args.flags.docs === "string" ? args.flags.docs.split(",").map((id) => id.trim()).filter(Boolean) : [];
         let documentIds = docs;
         if (documentIds.length === 0 && typeof args.flags.filter === "string") {
@@ -527,7 +533,7 @@ async function main(): Promise<number> {
         }
         if (documentIds.length === 0 && typeof args.flags.query !== "string") {
           console.error(
-            "usage: studio lesson|slides --docs id1,id2 | --filter <path substring> | --query <search> [--limit N]",
+            "usage: studio lesson|slides|mindmap --docs id1,id2 | --filter <path substring> | --query <search> [--limit N]",
           );
           return 2;
         }
@@ -548,7 +554,7 @@ async function main(): Promise<number> {
         return 0;
       }
 
-      console.error("usage: studio lesson|slides | studio list | studio show <id> | studio export <id> --out <file>");
+      console.error("usage: studio lesson|slides|mindmap | studio list | studio show <id> | studio export <id> --out <file>");
       return 2;
     }
 

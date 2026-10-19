@@ -7,6 +7,7 @@ import {
   backfillTrigramTitleIndex,
 } from "./002_chunk_title_index";
 import { ARTIFACTS_SQL } from "./003_artifacts";
+import { ARTIFACT_MINDMAP_SQL } from "./004_artifact_mindmap";
 
 /**
  * Trigram index: enables substring/fuzzy matching for short queries and typos.
@@ -33,4 +34,5 @@ export const MIGRATIONS: Migration[] = [
     up: backfillTrigramTitleIndex,
   },
   { id: 5, name: "artifacts", statements: ARTIFACTS_SQL },
+  { id: 6, name: "artifact_mindmap", statements: ARTIFACT_MINDMAP_SQL },
 ];

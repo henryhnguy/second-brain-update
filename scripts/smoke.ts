@@ -119,6 +119,13 @@ async function main(): Promise<void> {
   const deck = await generateArtifact({ kind: "slides", documentIds: [ingested.documentId], useLlm: false, maxSlides: 6 });
   record("studio deck", deck.slides.length >= 4, `${deck.slides.length} slide(s)`);
 
+  const mindMap = await generateArtifact({ kind: "mindmap", documentIds: [ingested.documentId], useLlm: false });
+  record(
+    "studio mind map",
+    Boolean(mindMap.mindmap) && (mindMap.mindmap?.children.length ?? 0) > 0,
+    `${mindMap.mindmap?.children.length ?? 0} branch(es)`,
+  );
+
   // 9. Capability registries are populated.
   record("extractors registered", listExtractors().length >= 5, listExtractors().map((e) => e.id).join(", "));
   record("importers registered", listImporters().length >= 5, listImporters().map((i) => i.id).join(", "));

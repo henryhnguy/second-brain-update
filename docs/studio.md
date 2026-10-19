@@ -1,4 +1,4 @@
-# Studio — lessons and decks from your own sources
+# Studio — lessons, decks and mind maps from your own sources
 
 Studio is the "notebook" half of the app: pick a handful of documents and turn them into something
 you can teach from. It is deliberately close to the NotebookLM workflow — sources in, artifact out —
@@ -7,7 +7,8 @@ model configured.
 
 ```
 sources ──▶ lesson   (objectives, concepts, terms, example, quiz, flashcards)
-        └─▶ deck    (title, agenda, one slide per source, takeaways, sources)
+        ├─▶ deck    (title, agenda, one slide per source, takeaways, sources)
+        └─▶ mindmap (one branch per source, key points underneath)
 ```
 
 ## Choosing sources
@@ -51,19 +52,32 @@ Two exports are built in, both generated in the browser from the stored slides:
 
 The in-app presenter supports arrow keys, `Esc`, a notes toggle and a full-screen mode.
 
+## The mind map
+
+A mind map is a two-level tree: the root is the topic, each branch is a source (or, for a single
+document, one of its headings), and the leaves are the highest-signal sentences under that branch,
+each carrying the `[n]` of the source it came from.
+
+- **Several sources** — one branch per document, up to seven, with up to four leaves each.
+- **One document** — branches come from the chunk headings, so a manual becomes its own structure.
+- **In the app** — zoom controls and hover text with the full sentence; the layout is a deterministic
+  horizontal tree, so the same artifact always draws the same shape.
+- **Export** — a self-contained SVG with no external fonts or scripts, sized to its content.
+
 ## With a model
 
 When `SB_AI_*` is configured and the artifact is generated with `useLlm: true`, the deterministic
-result is replaced by a model-written lesson or a JSON slide deck. If the model fails or returns
-invalid JSON, the deterministic artifact is kept — generation never fails because of the model.
+result is replaced by a model-written lesson, a JSON slide deck, or a JSON mind map. If the model
+fails or returns invalid JSON, the deterministic artifact is kept — generation never fails because
+of the model.
 
 ## API
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| `POST` | `/api/v1/studio/generate` | `{ kind, documentIds? , collectionId?, query?, limit?, maxSlides?, lang?, useLlm?, title? }` |
-| `GET` | `/api/v1/studio/artifacts` | `?kind=lesson|slides&limit=N` |
-| `GET` | `/api/v1/studio/artifacts/:id` | One artifact, citations included |
+| `POST` | `/api/v1/studio/generate` | `{ kind: "lesson"\|"slides"\|"mindmap", documentIds? , collectionId?, query?, limit?, maxSlides?, lang?, useLlm?, title? }` |
+| `GET` | `/api/v1/studio/artifacts` | `?kind=lesson|slides|mindmap&limit=N` |
+| `GET` | `/api/v1/studio/artifacts/:id` | One artifact, slides/mind map and citations included |
 | `DELETE` | `/api/v1/studio/artifacts/:id` | Delete the artifact, keep the sources |
 
 ## CLI
@@ -71,14 +85,16 @@ invalid JSON, the deterministic artifact is kept — generation never fails beca
 ```bash
 npm run cli -- studio lesson --filter 01_Guidelines --limit 6
 npm run cli -- studio slides --docs doc_a,doc_b --max-slides 12 --lang vi
+npm run cli -- studio mindmap --filter 01_Guidelines --limit 5
 npm run cli -- studio list
 npm run cli -- studio show art_…
-npm run cli -- studio export art_… --out deck.md
+npm run cli -- studio export art_… --out deck.md      # .svg for a mind map
 ```
 
 ## Limits
 
-- Lessons and decks are extractive without a model: they select, order and label, they do not rewrite.
+- Lessons, decks and mind maps are extractive without a model: they select, order and label, they do
+  not rewrite.
 - A deck is a summary of the selected sources, not a designed visual template; the HTML export is
   intentionally plain so it stays editable.
 - Source discovery is capped at 25 documents per artifact; that is a context window decision, not a

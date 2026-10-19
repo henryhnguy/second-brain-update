@@ -367,7 +367,7 @@ export const ROUTES: Route[] = [
     handler: async (context) =>
       json({
         artifacts: listArtifacts({
-          kind: (context.query.get("kind") as "lesson" | "slides" | null) ?? null,
+          kind: (context.query.get("kind") as "lesson" | "slides" | "mindmap" | null) ?? null,
           limit: numberParam(context.query.get("limit"), 30, 1, 200),
         }),
       }),
@@ -395,7 +395,7 @@ export const ROUTES: Route[] = [
     handler: async (context) => {
       const body = z
         .object({
-          kind: z.enum(["lesson", "slides"]),
+          kind: z.enum(["lesson", "slides", "mindmap"]),
           documentIds: z.array(z.string()).optional(),
           collectionId: z.string().nullable().optional(),
           query: z.string().optional(),

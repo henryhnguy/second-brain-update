@@ -2,20 +2,22 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { CitationList, Markdown } from "@/components/markdown";
 import { Badge, Button, Card, CardTitle, Notice, Spinner, api } from "@/components/ui";
 import { slidesToMarp, slidesToStandaloneHtml } from "@/lib/studio/format";
-import type { ArtifactSlide, Citation } from "@/lib/types/domain";
+import { layoutMindMap, mindmapToSvg } from "@/lib/studio/mindmap";
+import type { ArtifactSlide, Citation, MindMapNode } from "@/lib/types/domain";
 
 type Artifact = {
   id: string;
-  kind: "lesson" | "slides";
+  kind: "lesson" | "slides" | "mindmap";
   title: string;
   documentIds: string[];
   markdown: string;
   slides: ArtifactSlide[];
+  mindmap: MindMapNode | null;
   citations: Citation[];
   usedLlm: boolean;
   createdAt: string;
@@ -39,6 +41,65 @@ function slug(value: string): string {
     .slice(0, 60) || "studio";
 }
 
+function clip(value: string, max: number): string {
+  return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
+}
+
+function MindMapView({ root, zoom }: { root: MindMapNode; zoom: number }) {
+  const layout = useMemo(() => layoutMindMap(root), [root]);
+  return (
+    <div className="max-h-[70vh] overflow-auto rounded-2xl border border-line bg-[#080c12] p-2">
+      <svg
+        width={layout.width * zoom}
+        height={layout.height * zoom}
+        viewBox={`0 0 ${layout.width} ${layout.height}`}
+        role="img"
+        aria-label={root.label}
+      >
+        {layout.links.map(({ from, to }, index) => {
+          const x1 = from.x + from.width;
+          const y1 = from.y + from.height / 2;
+          const x2 = to.x;
+          const y2 = to.y + to.height / 2;
+          const bend = Math.max(30, (x2 - x1) / 2);
+          return (
+            <path
+              key={`link-${index}`}
+              d={`M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`}
+              fill="none"
+              stroke="#3b4b63"
+              strokeWidth={1.6}
+            />
+          );
+        })}
+        {layout.nodes.map(({ node, x, y, width, height, depth }) => {
+          const isRoot = depth === 0;
+          const fill = isRoot ? "#1f4e78" : "#121a26";
+          const stroke = isRoot ? "#5b8def" : depth === 1 ? "#3f5878" : "#263445";
+          const color = isRoot ? "#ffffff" : "#dbe6f3";
+          return (
+            <g key={node.id}>
+              <title>{node.detail ?? node.label}</title>
+              <rect x={x} y={y} width={width} height={height} rx={10} fill={fill} stroke={stroke} strokeWidth={1.4} />
+              <text
+                x={x + 12}
+                y={y + height / 2 + 4}
+                fontFamily="ui-sans-serif, system-ui, Segoe UI, sans-serif"
+                fontSize={isRoot ? 13 : 12}
+                fontWeight={isRoot || depth === 1 ? 600 : 400}
+                fill={color}
+              >
+                {clip(node.label, isRoot ? 40 : depth === 1 ? 36 : 30)}
+                {node.citation ? <tspan fill="#7f9cc0" fontSize={10}>{` [${node.citation}]`}</tspan> : null}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
 export default function ArtifactPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -48,6 +109,7 @@ export default function ArtifactPage() {
   const [index, setIndex] = useState(0);
   const [showNotes, setShowNotes] = useState(true);
   const [presenting, setPresenting] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   const load = useCallback(async () => {
     try {
@@ -106,6 +168,17 @@ export default function ArtifactPage() {
             <Button onClick={() => download(`${slug(artifact.title)}.md`, artifact.markdown, "text/markdown")}>
               Download .md
             </Button>
+          ) : artifact.kind === "mindmap" ? (
+            <Button
+              onClick={() =>
+                artifact.mindmap
+                  ? download(`${slug(artifact.title)}.svg`, mindmapToSvg(artifact.mindmap, artifact.title), "image/svg+xml")
+                  : undefined
+              }
+              disabled={!artifact.mindmap}
+            >
+              Download .svg
+            </Button>
           ) : (
             <>
               <Button onClick={() => download(`${slug(artifact.title)}-marp.md`, slidesToMarp(artifact.slides, artifact.title), "text/markdown")}>
@@ -149,6 +222,36 @@ export default function ArtifactPage() {
         <>
           <Card>
             <Markdown citations={artifact.citations}>{artifact.markdown}</Markdown>
+          </Card>
+          {artifact.citations.length > 0 ? (
+            <Card>
+              <CardTitle>Sources</CardTitle>
+              <CitationList citations={artifact.citations} />
+            </Card>
+          ) : null}
+        </>
+      ) : artifact.kind === "mindmap" ? (
+        <>
+          <Card>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle hint={artifact.mindmap ? `${artifact.mindmap.children.length} branches` : undefined}>Mind map</CardTitle>
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setZoom((current) => Math.max(0.5, Math.round((current - 0.1) * 10) / 10))}>−</Button>
+                <Button onClick={() => setZoom(1)}>{Math.round(zoom * 100)}%</Button>
+                <Button onClick={() => setZoom((current) => Math.min(2, Math.round((current + 0.1) * 10) / 10))}>+</Button>
+              </div>
+            </div>
+            {artifact.mindmap ? (
+              <div className="mt-3">
+                <MindMapView root={artifact.mindmap} zoom={zoom} />
+                <p className="mt-2 text-[11px] text-muted">
+                  Hover a node for the full sentence; numbers are source citations. Download the SVG to use it in a
+                  document or a slide.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-muted">This artifact has no mind map data.</p>
+            )}
           </Card>
           {artifact.citations.length > 0 ? (
             <Card>

@@ -2,8 +2,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { getArtifact, listArtifacts } from "@/lib/db/repo/artifacts";
 import { ingestText } from "@/lib/ingest/pipeline";
-import { generateArtifact } from "@/lib/studio";
+import { generateArtifact, mindMapCoversSources } from "@/lib/studio";
 import { slidesToMarp, slidesToStandaloneHtml } from "@/lib/studio/format";
+import { layoutMindMap, mindmapToSvg } from "@/lib/studio/mindmap";
 import { useTempDataDir } from "./helpers/env";
 
 beforeEach(() => {
@@ -103,5 +104,51 @@ describe("studio slides", () => {
     expect(html).toContain("<!doctype html>");
     expect(html).toContain("Deck &lt;test&gt;");
     expect(html).toContain("<section>");
+  });
+});
+
+describe("studio mind maps", () => {
+  it("maps several sources into branches with cited leaves", async () => {
+    const { molding, stitching } = seedSources();
+    const artifact = await generateArtifact({
+      kind: "mindmap",
+      documentIds: [molding.documentId, stitching.documentId],
+      useLlm: false,
+    });
+
+    expect(artifact.kind).toBe("mindmap");
+    expect(artifact.mindmap).not.toBeNull();
+    expect(artifact.mindmap?.children).toHaveLength(2);
+    expect(artifact.mindmap?.children[0]?.children.length).toBeGreaterThan(0);
+    expect(artifact.mindmap?.children[0]?.children[0]?.citation).toBe(1);
+    expect(artifact.markdown).toContain("- ");
+
+    const layout = layoutMindMap(artifact.mindmap!);
+    expect(layout.nodes.length).toBeGreaterThan(4);
+    expect(layout.width).toBeGreaterThan(0);
+
+    const svg = mindmapToSvg(artifact.mindmap!, artifact.title);
+    expect(svg).toContain("<svg");
+    expect(svg).toContain("</svg>");
+    expect(svg).toContain("<title>");
+
+    const stored = getArtifact(artifact.id);
+    expect(stored?.mindmap?.children).toHaveLength(2);
+  });
+
+  it("maps a single document by its headings", async () => {
+    const { molding } = seedSources();
+    const artifact = await generateArtifact({ kind: "mindmap", documentIds: [molding.documentId], useLlm: false });
+    expect(artifact.mindmap?.children.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("rejects a model map that collapses six sources into one", () => {
+    const branch = (citation: number) => ({ id: `m${citation}`, label: `Branch ${citation}`, citation, children: [] });
+    const collapsed = { id: "root", label: "Root", children: [branch(1), branch(1), branch(1)] };
+    expect(mindMapCoversSources(collapsed, 6)).toBe(false);
+
+    const spread = { id: "root", label: "Root", children: [branch(1), branch(2), branch(3)] };
+    expect(mindMapCoversSources(spread, 6)).toBe(true);
+    expect(mindMapCoversSources(spread, 2)).toBe(true);
   });
 });

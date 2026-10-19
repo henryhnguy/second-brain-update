@@ -38,6 +38,11 @@ const KINDS = [
     name: "Slide deck",
     detail: "A presenter with speaker notes, plus Marp Markdown and standalone HTML exports.",
   },
+  {
+    id: "mindmap" as const,
+    name: "Mind map",
+    detail: "A branch per source with the key points underneath; exportable as a standalone SVG.",
+  },
 ];
 
 export default function StudioPage() {
@@ -46,7 +51,7 @@ export default function StudioPage() {
   const [artifacts, setArtifacts] = useState<ArtifactRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
-  const [kind, setKind] = useState<"lesson" | "slides">("lesson");
+  const [kind, setKind] = useState<"lesson" | "slides" | "mindmap">("lesson");
   const [lang, setLang] = useState<"en" | "vi">("en");
   const [maxSlides, setMaxSlides] = useState("10");
   const [busy, setBusy] = useState(false);

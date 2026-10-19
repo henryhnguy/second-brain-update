@@ -273,7 +273,7 @@ export type SyncRun = {
   detail: Record<string, unknown>;
 };
 
-export type ArtifactKind = "lesson" | "slides";
+export type ArtifactKind = "lesson" | "slides" | "mindmap";
 
 export type ArtifactSlide = {
   title: string;
@@ -281,6 +281,16 @@ export type ArtifactSlide = {
   bullets: string[];
   /** Speaker notes: what to say, and where the material came from. */
   notes?: string;
+};
+
+export type MindMapNode = {
+  id: string;
+  label: string;
+  /** Optional longer text, shown on hover and in the exported SVG title. */
+  detail?: string;
+  /** 1-based citation number this branch came from. */
+  citation?: number;
+  children: MindMapNode[];
 };
 
 export type Artifact = {
@@ -291,6 +301,7 @@ export type Artifact = {
   params: Record<string, unknown>;
   markdown: string;
   slides: ArtifactSlide[];
+  mindmap: MindMapNode | null;
   citations: Citation[];
   usedLlm: boolean;
   createdAt: string;

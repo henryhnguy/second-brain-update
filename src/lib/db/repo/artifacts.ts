@@ -1,10 +1,12 @@
 import { newId } from "../../core/ids";
 import { nowIso } from "../../core/time";
-import type { Artifact, ArtifactKind, ArtifactSlide, Citation } from "../../types/domain";
+import type { Artifact, ArtifactKind, ArtifactSlide, Citation, MindMapNode } from "../../types/domain";
 import { getDb } from "../connection";
 import { all, get, jsonParse, num, run, str } from "../sql";
 
 function mapArtifact(row: Record<string, unknown>): Artifact {
+  const rawMindmap = typeof row.mindmap === "string" ? row.mindmap : "";
+  const mindmap = rawMindmap.length > 0 ? jsonParse<MindMapNode | null>(rawMindmap, null) : null;
   return {
     id: str(row.id),
     kind: str(row.kind, "lesson") as ArtifactKind,
@@ -13,6 +15,7 @@ function mapArtifact(row: Record<string, unknown>): Artifact {
     params: jsonParse<Record<string, unknown>>(row.params, {}),
     markdown: str(row.markdown),
     slides: jsonParse<ArtifactSlide[]>(row.slides, []),
+    mindmap,
     citations: jsonParse<Citation[]>(row.citations, []),
     usedLlm: num(row.used_llm) === 1,
     createdAt: str(row.created_at),
@@ -27,6 +30,7 @@ export function createArtifact(input: {
   params: Record<string, unknown>;
   markdown: string;
   slides: ArtifactSlide[];
+  mindmap?: MindMapNode | null;
   citations: Citation[];
   usedLlm: boolean;
 }): Artifact {
@@ -34,8 +38,8 @@ export function createArtifact(input: {
   const at = nowIso();
   run(
     getDb(),
-    `INSERT INTO artifacts (id, kind, title, document_ids, params, markdown, slides, citations, used_llm, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO artifacts (id, kind, title, document_ids, params, markdown, slides, mindmap, citations, used_llm, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       input.kind,
@@ -44,6 +48,7 @@ export function createArtifact(input: {
       JSON.stringify(input.params),
       input.markdown,
       JSON.stringify(input.slides),
+      input.mindmap ? JSON.stringify(input.mindmap) : "",
       JSON.stringify(input.citations),
       input.usedLlm ? 1 : 0,
       at,

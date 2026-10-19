@@ -96,7 +96,7 @@ Codes include `bad_request`, `unauthorized`, `not_found`, `conflict`, `upstream_
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| `POST` | `/studio/generate` | `{ kind: "lesson"\|"slides", documentIds?, collectionId?, query?, limit?, maxSlides?, lang?, useLlm?, title? }` |
+| `POST` | `/studio/generate` | `{ kind: "lesson"\|"slides"\|"mindmap", documentIds?, collectionId?, query?, limit?, maxSlides?, lang?, useLlm?, title? }` |
 | `GET` | `/studio/artifacts` | Recent artifacts; `kind`, `limit` |
 | `GET` | `/studio/artifacts/:id` | One artifact, slides and citations included |
 | `DELETE` | `/studio/artifacts/:id` | Delete the artifact; sources stay in the library |

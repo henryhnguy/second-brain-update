@@ -31,17 +31,20 @@ All notable changes to this project are documented here. The format follows
   explicit file list (how a reorganisation spreadsheet is loaded without walking unrelated folders),
   and `meta infer` recovers `code`, `version` and `effectiveDate` from titles such as
   `MO - FTW.06 …_V3_03.18.2026.pdf`. Covered by `tests/ooxml.test.ts` and `tests/metadata.test.ts`.
-- **Studio — lessons and slide decks from selected sources.** The app could organize and explain its
-  memory but not teach from it. `/studio` takes an explicit source set (or a collection, or a search
-  query) and produces either a **lesson** — objectives, core concepts per source, key terms, a worked
-  example, a quiz and flashcards, every point carrying a `[n]` citation — or a **slide deck** with
-  speaker notes. Decks have an in-app presenter (arrow keys, `Esc`, notes, full screen) and two
-  exports generated in the browser: Marp Markdown and a standalone HTML file with inline CSS and
-  navigation. Deterministic without a model; with one configured the lesson is rewritten, or the deck
-  comes back as JSON, and a failed model call falls back to the deterministic artifact. Artifacts are
-  stored in a new `artifacts` table (migration 5) with their citations, so a citation still resolves
-  after a reload. Exposed at `/api/v1/studio/{generate,artifacts}`, on the Studio page, and in the CLI
-  as `studio lesson|slides|list|show|export`. Covered by `tests/studio.test.ts`.
+- **Studio — lessons, decks and mind maps from selected sources.** The app could organize and explain
+  its memory but not teach from it. `/studio` takes an explicit source set (or a collection, or a
+  search query) and produces either a **lesson** — objectives, core concepts per source, key terms, a
+  worked example, a quiz and flashcards, every point carrying a `[n]` citation — a **slide deck**
+  with speaker notes, or a **mind map** with one branch per source (per heading for a single
+  document) and cited leaves. Decks have an in-app presenter (arrow keys, `Esc`, notes, full screen)
+  and two exports generated in the browser: Marp Markdown and a standalone HTML file with inline CSS
+  and navigation. Mind maps zoom in the app and export as a self-contained SVG with a deterministic
+  horizontal layout. Deterministic without a model; with one configured the lesson is rewritten, or
+  the deck/map comes back as JSON, and a failed model call falls back to the deterministic artifact.
+  Artifacts are stored in a new `artifacts` table (migrations 5 and 6) with their citations, so a
+  citation still resolves after a reload. Exposed at `/api/v1/studio/{generate,artifacts}`, on the
+  Studio page, and in the CLI as `studio lesson|slides|mindmap|list|show|export`. Covered by
+  `tests/studio.test.ts`.
 
 ### Fixed
 
