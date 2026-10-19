@@ -77,6 +77,7 @@ Useful commands:
 | Command | What it does |
 | --- | --- |
 | `npm run dev` | Dev server on port 4173 |
+| `start.bat` | Windows: install on first run, start the server and open the browser |
 | `npm run build` / `npm start` | Production build and server |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm test` | Vitest suite |
